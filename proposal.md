@@ -1,18 +1,36 @@
 # Title
+Drawing Pygame Software
 
 ## Repository
-<Link to your project's public GitHub respository>
+https://github.com/andrewkb1004-del/Drawing-Pygame-Software-andrewkb1004-del
 
 ## Description
-1-2 sentence description of what it will do and how it relevant to media and digital arts.
+# 1-2 sentence description of what it will do and how it relevant to media and digital arts.
+It will give the user control of different drawing tools used to make an artistic piece.  This will give the artist
+a chance to create their own simplistic style of art with the listed tools and features displayed.
 
 ## Features
-- Feature 1
-	- Short explaination of how it will be executed.
-- Feature 2
-	- Short explaination of how it will be executed.
-- Feature N 
-	- Short explaination of how it will be executed.
+- Pen tool
+	- Makes the user artist draw on the pygame window canvas by using their mouse or tablet to click and drag along 
+  the screen. (There will be an option to change the tip size.)
+
+- Eraser tool
+	- It will simply erase whatever pen tool or shape marks is on the screen by clicking on the sidebar and dragging
+  the mouse. (There will be an option to change the tip size.)
+  
+- Shape tool 
+	- Create rectangular, triangle, and circle shapes by clicking on the sidebar and dragging the mouse to any size.
+
+- Color Wheel or Bar 
+	- It will change the color of the pen tool and shape tool. If it can't be a wheel, then it can be a set of color
+  scrolling controls. (There will be an option to change the opacity.)
+
+- Layer Bar
+	- A sidebar where the artist can switch between different layers of drawing, as well as add and delete them.
+
+- Save Key
+	- A keyword function that allows the artist to save what they have drawn. (It will allow the artist to name the
+  file and extension.)
 
 ## Challenges
 - Short sentence of any skill or topic that needs to be learnt or researched.
