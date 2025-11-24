@@ -83,7 +83,7 @@ def quit_program(instance):
     """Function to exit the program."""
     global running
     running = False
-    print("Exiting ...")
+    #print("Exiting ...")
 
 def set_active_tool(instance):
     """Function to set pen as current active tool."""
@@ -92,7 +92,7 @@ def set_active_tool(instance):
 
     start_pos = None
     active_tool = instance.tool
-    print(f"Set {active_tool} as active!")
+    #print(f"Set {active_tool} as active!")
 
 def get_square(pos1, pos2):
     x1, y1 = pos1[0], pos1[1]
@@ -132,38 +132,10 @@ def get_rect(pos1, pos2):
     height = abs(y2 - y1)
     return pygame.Rect(x, y, width, height)
 
-def main():
-    pygame.init()
-    pygame.display.set_caption("Drawing Pygame Software")
-    fullscreen = False
-    if fullscreen:
-        screen = pygame.display.set_mode(flags=pygame.FULLSCREEN)
-        infoObject = pygame.display.Info()
-        screen_width, screen_height = infoObject.current_w, infoObject.current_h
-        resolution = (screen_width, screen_height)
-    else:
-        screen_width = 1280
-        screen_height = 768
-        resolution = (screen_width, screen_height)
-        screen = pygame.display.set_mode(resolution)
-
-    line_thickness = 2 # Initial brush size
-    current_color = BLACK # Default drawing color
-    background_color = WHITE
-    fps = 60
-
-    # Font Setup
-    font = pygame.font.SysFont('Arial', 12)
-
-    # --- Create Button Instances ---
-    edge_padding = 15
-    button_padding = 10
-
-    # Left side buttons
+def create_left_buttons(edge_padding, button_padding, button_w, button_h):
+    # --- Create left side buttons ---
     button_x = edge_padding
     button_y = 50
-    button_w = 50
-    button_h = 50
 
     pen_button = Button(
         x=button_x, y=button_y, width=button_w, height=button_h,
@@ -235,10 +207,12 @@ def main():
         tooltip_text="Quit Program",
         action=quit_program # Pass the function reference
     )
-    
-    # Right side buttons
-    button_w = 50
-    button_h = 50
+
+    global buttons_list
+    buttons_list.extend([pen_button, eraser_button, square_button, rect_button, circle_button, oval_button, triangle_button, quit_button])    
+
+def create_right_buttons(edge_padding, button_padding, button_w, button_h, screen_width):
+    # --- Create right side buttons ---
     button_x = screen_width - edge_padding - button_w
     button_y = 50
 
@@ -286,8 +260,39 @@ def main():
         action=set_active_tool # Pass the function reference
     )
 
-    tool_buttons_list = [pen_button, eraser_button, square_button, rect_button, circle_button, oval_button, triangle_button, quit_button,
-                         color_button, save_button, load_button, import_button, export_button]
+    global buttons_list
+    buttons_list.extend([color_button, save_button, load_button, import_button, export_button])
+
+def main():
+    pygame.init()
+    pygame.display.set_caption("Drawing Pygame Software")
+    fullscreen = False
+    if fullscreen:
+        screen = pygame.display.set_mode(flags=pygame.FULLSCREEN)
+        infoObject = pygame.display.Info()
+        screen_width, screen_height = infoObject.current_w, infoObject.current_h
+        resolution = (screen_width, screen_height)
+    else:
+        screen_width = 1280
+        screen_height = 768
+        resolution = (screen_width, screen_height)
+        screen = pygame.display.set_mode(resolution)
+
+    line_thickness = 2 # Initial brush size
+    current_color = BLACK # Default drawing color
+    background_color = WHITE
+    fps = 60
+
+    edge_padding = 15
+    button_padding = 10
+    button_w = 50
+    button_h = 50
+
+    global buttons_list
+    buttons_list = []
+    create_left_buttons(edge_padding, button_padding, button_w, button_h)
+    create_right_buttons(edge_padding, button_padding, button_w, button_h, screen_width)
+
 
     # Create a separate surface for drawing.
     canvas = pygame.Surface((screen_width, screen_height))
@@ -381,7 +386,7 @@ def main():
                     #print(f'Thickness = {line_thickness}')
 
             # Handling event for the buttons
-            for button in tool_buttons_list:
+            for button in buttons_list:
                 button.handle_event(event)
 
         # --- Drawing ---
@@ -389,18 +394,19 @@ def main():
         screen.blit(canvas, (0, 0))
 
         # Draw the buttons onto the screen
-        for button in tool_buttons_list:
+        for button in buttons_list:
             if button.tool != active_tool:
                 button.is_active = False
             button.draw(screen)  
 
         # Draw tooltip over buttons
-        for button in tool_buttons_list:
+        for button in buttons_list:
             button.draw_tooltip(screen)        
 
         # Display mouse coordinate at the bottom left of the screen
         mouse_pos = pygame.mouse.get_pos()
         mouse_coordinate_text = f"{mouse_pos[0]} , {mouse_pos[1]}"
+        font = pygame.font.SysFont('Arial', 12)
         text_surface = font.render(mouse_coordinate_text , True, BLACK)
         screen.blit(text_surface, (15, screen_height-15))
 
