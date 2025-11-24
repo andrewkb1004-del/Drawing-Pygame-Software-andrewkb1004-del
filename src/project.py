@@ -5,7 +5,7 @@ import sys
 class Button:
     """A class for creating clickable buttons in Pygame."""
     
-    def __init__(self, x, y, width, height, inactive_image, active_image, tool="None", action=None):
+    def __init__(self, x, y, width, height, inactive_image, active_image, tool="None", tooltip_text="", action=None):
         """
         Initializes the button object.
 
@@ -16,14 +16,20 @@ class Button:
         :param inactive_image: The image to show when the mouse is not hovering above the button.
         :param active_image: The image when the mouse is hovering above the button.
         :param tool: Specify the tool associated with this button.
+        :param tooltip_text: Specify the text to display when the mouse is hovering over the button.
         :param action: The function to call when the button is clicked.
         """
         self.rect = pygame.Rect(x, y, width, height)
         self.inactive_image = pygame.transform.scale(pygame.image.load(inactive_image), (width, height))
         self.active_image = pygame.transform.scale(pygame.image.load(active_image), (width, height))
         self.action = action
+        self.tooltip = tooltip_text
         self.is_active = False
         self.tool = tool
+
+        # Setup Font
+        self.font = pygame.font.SysFont('Arial', 12)
+        self.text_color = (0, 0, 0) # Black text
 
     def draw(self, screen):
         """Draws the button on the screen, changing color on hover."""
@@ -37,6 +43,25 @@ class Button:
             
         # Draw the button
         screen.blit(current_image, (self.rect.left, self.rect.top))
+
+    def draw_tooltip(self, screen):
+        """Draws the button on the screen, changing color on hover."""
+        mouse_pos = pygame.mouse.get_pos()
+        
+        # Determine current state based on hover
+        if self.rect.collidepoint(mouse_pos):
+            if self.tooltip != "":
+                text_surface = self.font.render(self.tooltip, True, BLACK)
+                padding = 5
+                box_rect = text_surface.get_rect()
+                #box_rect.topleft = (mouse_pos[0] + 20, mouse_pos[1] - 20)  # Offset from cursor
+                box_rect.topright = (mouse_pos[0] + 20, mouse_pos[1] - 20)  # Offset from cursor
+                box_rect.inflate_ip(padding * 2, padding * 2)
+
+                # Draw background and border
+                pygame.draw.rect(screen, TOOLTIP_BG, box_rect)
+                pygame.draw.rect(screen, BLACK, box_rect, 1)
+                screen.blit(text_surface, (box_rect.x + padding, box_rect.y + padding))
 
     def handle_event(self, event):
         """Checks for a mouse click on the button and executes the action."""
@@ -92,10 +117,6 @@ def main():
     # Font Setup
     font = pygame.font.SysFont('Arial', 12)
 
-    # Create a separate surface for drawing.
-    canvas = pygame.Surface((screen_width, screen_height))
-    canvas.fill(background_color)
-
     # --- Create Button Instances ---
     edge_padding = 15
     button_padding = 10
@@ -110,6 +131,7 @@ def main():
         x=button_x, y=button_y, width=button_w, height=button_h,
         inactive_image=os.path.join("assets", "pen_inactive.png"), active_image=os.path.join("assets", "pen_active.png"),
         tool="pen",
+        tooltip_text="Pen",
         action=set_active_tool # Pass the function reference
     )
 
@@ -118,6 +140,7 @@ def main():
         x=button_x, y=button_y, width=button_w, height=button_h,
         inactive_image=os.path.join("assets", "eraser_inactive.png"), active_image=os.path.join("assets", "eraser_active.png"),
         tool="eraser",
+        tooltip_text="Eraser",
         action=set_active_tool # Pass the function reference
     )
     
@@ -126,6 +149,7 @@ def main():
         x=button_x, y=button_y, width=button_w, height=button_h,
         inactive_image=os.path.join("assets", "square_inactive.png"), active_image=os.path.join("assets", "square_active.png"),
         tool="square",
+        tooltip_text="Square",
         action=set_active_tool # Pass the function reference
     )
 
@@ -134,6 +158,7 @@ def main():
         x=button_x, y=button_y, width=button_w, height=button_h,
         inactive_image=os.path.join("assets", "rect_inactive.png"), active_image=os.path.join("assets", "rect_active.png"),
         tool="rect",
+        tooltip_text="Rectangle",
         action=set_active_tool # Pass the function reference
     )
     
@@ -142,6 +167,7 @@ def main():
         x=button_x, y=button_y, width=button_w, height=button_h,
         inactive_image=os.path.join("assets", "circle_inactive.png"), active_image=os.path.join("assets", "circle_active.png"),
         tool="circle",
+        tooltip_text="Circle",
         action=set_active_tool # Pass the function reference
     )
 
@@ -150,6 +176,7 @@ def main():
         x=button_x, y=button_y, width=button_w, height=button_h,
         inactive_image=os.path.join("assets", "oval_inactive.png"), active_image=os.path.join("assets", "oval_active.png"),
         tool="oval",
+        tooltip_text="Oval",
         action=set_active_tool # Pass the function reference
     )
 
@@ -158,6 +185,7 @@ def main():
         x=button_x, y=button_y, width=button_w, height=button_h,
         inactive_image=os.path.join("assets", "triangle_inactive.png"), active_image=os.path.join("assets", "triangle_active.png"),
         tool="triangle",
+        tooltip_text="Triangle",
         action=set_active_tool # Pass the function reference
     )
 
@@ -166,6 +194,7 @@ def main():
         x=button_x, y=button_y, width=button_w, height=button_h,
         inactive_image=os.path.join("assets", "quit_inactive.png"), active_image=os.path.join("assets", "quit_active.png"),
         tool="quit",
+        tooltip_text="Quit Program",
         action=quit_program # Pass the function reference
     )
     
@@ -179,6 +208,7 @@ def main():
         x=button_x, y=button_y, width=button_w, height=button_h,
         inactive_image=os.path.join("assets", "color_inactive.png"), active_image=os.path.join("assets", "color_active.png"),
         tool="color bar",
+        tooltip_text="Color Bar",
         action=set_active_tool # Pass the function reference
     )
     
@@ -187,6 +217,7 @@ def main():
         x=button_x, y=button_y, width=button_w, height=button_h,
         inactive_image=os.path.join("assets", "save.png"), active_image=os.path.join("assets", "save.png"),
         tool="save",
+        tooltip_text="Save",
         action=set_active_tool # Pass the function reference
     )
     
@@ -195,6 +226,7 @@ def main():
         x=button_x, y=button_y, width=button_w, height=button_h,
         inactive_image=os.path.join("assets", "load.png"), active_image=os.path.join("assets", "load.png"),
         tool="load",
+        tooltip_text="Load",
         action=set_active_tool # Pass the function reference
     )
 
@@ -203,6 +235,7 @@ def main():
         x=button_x, y=button_y, width=button_w, height=button_h,
         inactive_image=os.path.join("assets", "import.png"), active_image=os.path.join("assets", "import.png"),
         tool="import",
+        tooltip_text="Import",
         action=set_active_tool # Pass the function reference
     )
 
@@ -211,11 +244,16 @@ def main():
         x=button_x, y=button_y, width=button_w, height=button_h,
         inactive_image=os.path.join("assets", "export.png"), active_image=os.path.join("assets", "export.png"),
         tool="export",
+        tooltip_text="Export",
         action=set_active_tool # Pass the function reference
     )
 
     tool_buttons_list = [pen_button, eraser_button, square_button, rect_button, circle_button, oval_button, triangle_button, quit_button,
                          color_button, save_button, load_button, import_button, export_button]
+
+    # Create a separate surface for drawing.
+    canvas = pygame.Surface((screen_width, screen_height))
+    canvas.fill(background_color)
 
     global running
     global active_tool
@@ -238,7 +276,8 @@ def main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # Left mouse button
                     drawing = True
-                    last_pos = event.pos # Start drawing from current position
+                    if event.pos[0] > edge_padding + button_w + edge_padding and event.pos[0] < screen_width - (edge_padding + button_w + edge_padding):
+                        last_pos = event.pos # Start drawing from current position
 
             # Mouse Button Up Event
             if event.type == pygame.MOUSEBUTTONUP:
@@ -249,12 +288,13 @@ def main():
             # Mouse Motion Event
             if event.type == pygame.MOUSEMOTION:
                 if drawing:
-                    current_pos = event.pos
-                    if last_pos:
-                        # Draw a line from the last position to the current position
-                        # This makes the drawing smooth rather than just dots
-                        pygame.draw.line(canvas, current_color, last_pos, current_pos, line_thickness)
-                    last_pos = current_pos # Update last_pos for the next segment
+                    if event.pos[0] > edge_padding + button_w + edge_padding and event.pos[0] < screen_width - (edge_padding + button_w + edge_padding):
+                        current_pos = event.pos
+                        if last_pos:
+                            # Draw a line from the last position to the current position
+                            # This makes the drawing smooth rather than just dots
+                            pygame.draw.line(canvas, current_color, last_pos, current_pos, line_thickness)
+                        last_pos = current_pos # Update last_pos for the next segment
 
             # Keyboard Events
             if event.type == pygame.KEYDOWN:
@@ -300,6 +340,16 @@ def main():
                 button.is_active = False
             button.draw(screen)  
 
+        # Draw tooltip over buttons
+        for button in tool_buttons_list:
+            button.draw_tooltip(screen)        
+
+        # Display mouse coordinate at the bottom left of the screen
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_coordinate_text = f"{mouse_pos[0]} , {mouse_pos[1]}"
+        text_surface = font.render(mouse_coordinate_text , True, BLACK)
+        screen.blit(text_surface, (15, screen_height-15))
+
         # --- Update the Display ---
         pygame.display.flip()
 
@@ -318,5 +368,7 @@ if __name__ == "__main__":
     GREEN = (0, 255, 0)
     BLUE = (0, 0, 255)
     YELLOW = (255, 255, 0)
-    PURPLE = (128, 0, 128) # Added a new color
+    PURPLE = (128, 0, 128)
+    TOOLTIP_BG = (255, 255, 200)
+
     main()
