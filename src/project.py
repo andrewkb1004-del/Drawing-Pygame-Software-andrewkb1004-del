@@ -267,6 +267,11 @@ def main():
     clock = pygame.time.Clock() # To control the frame rate
 
     while running:
+        if active_tool == "eraser":
+            draw_color = background_color
+        else:
+            draw_color = current_color
+
         # Event Loop
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -293,7 +298,7 @@ def main():
                         if last_pos:
                             # Draw a line from the last position to the current position
                             # This makes the drawing smooth rather than just dots
-                            pygame.draw.line(canvas, current_color, last_pos, current_pos, line_thickness)
+                            pygame.draw.line(canvas, draw_color, last_pos, current_pos, line_thickness)
                         last_pos = current_pos # Update last_pos for the next segment
 
             # Keyboard Events
