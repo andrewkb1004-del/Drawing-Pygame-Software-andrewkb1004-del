@@ -94,6 +94,44 @@ def set_active_tool(instance):
     active_tool = instance.tool
     print(f"Set {active_tool} as active!")
 
+def get_square(pos1, pos2):
+    x1, y1 = pos1[0], pos1[1]
+    x2, y2 = pos2[0], pos2[1]
+
+    width = abs(x2 - x1)
+    height = abs(y2 - y1)
+    size = min(width, height)
+
+    if x1 < x2:
+        x = x1
+    else:
+        x = x1 - size
+
+    if y1 < y2:
+        y = y1
+    else:
+        y = y1 - size
+
+    return pygame.Rect(x, y, size, size)
+
+def get_rect(pos1, pos2):
+    x1, y1 = pos1[0], pos1[1]
+    x2, y2 = pos2[0], pos2[1]
+
+    if x1 < x2:
+        x = x1
+    else:
+        x = x2
+
+    if y1 < y2:
+        y = y1
+    else:
+        y = y2
+
+    width = abs(x2 - x1)
+    height = abs(y2 - y1)
+    return pygame.Rect(x, y, width, height)
+
 def main():
     pygame.init()
     pygame.display.set_caption("Drawing Pygame Software")
@@ -262,9 +300,10 @@ def main():
     active_tool = "None"
     running = True
     start_pos = None # Use for square, rect, circle, oval, and triangle
-    drawing = False # Flag to check if the mouse button is held down
+    mouse_button_down = False # Flag to check if the mouse button is held down
     last_pos = None # To store the last mouse position for continuous lines
     clock = pygame.time.Clock() # To control the frame rate
+    start_pos = None # Use for square, rect, circle, oval, and triangle
 
     while running:
         if active_tool == "eraser":
@@ -280,19 +319,29 @@ def main():
             # Mouse Button Down Event
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # Left mouse button
-                    drawing = True
+                    mouse_button_down = True
                     if event.pos[0] > edge_padding + button_w + edge_padding and event.pos[0] < screen_width - (edge_padding + button_w + edge_padding):
                         last_pos = event.pos # Start drawing from current position
+                        if active_tool in ["square", "rect", "circle", "oval", "triangle"]:
+                            if start_pos is None:
+                                start_pos = event.pos
+                            else:
+                                if active_tool == "square":
+                                    pygame.draw.rect(canvas, draw_color, get_square(start_pos, event.pos))
+                                    start_pos = None
+                                elif active_tool == "rect":
+                                    pygame.draw.rect(canvas, draw_color, get_rect(start_pos, event.pos))
+                                    start_pos = None
 
             # Mouse Button Up Event
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:  # Left mouse button
-                    drawing = False
+                    mouse_button_down = False
                     last_pos = None # Reset last_pos when button is released
 
             # Mouse Motion Event
             if event.type == pygame.MOUSEMOTION:
-                if drawing:
+                if mouse_button_down:
                     if event.pos[0] > edge_padding + button_w + edge_padding and event.pos[0] < screen_width - (edge_padding + button_w + edge_padding):
                         current_pos = event.pos
                         if last_pos:
