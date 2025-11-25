@@ -457,8 +457,8 @@ def main():
         screen_width, screen_height = infoObject.current_w, infoObject.current_h
         resolution = (screen_width, screen_height)
     else:
-        screen_width = 1280
-        screen_height = 768
+        screen_width = 1600
+        screen_height = 900
         resolution = (screen_width, screen_height)
         screen = pygame.display.set_mode(resolution)
 
