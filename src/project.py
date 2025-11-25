@@ -335,7 +335,7 @@ def create_right_buttons(edge_padding, button_padding, button_w, button_h, scree
     button_x = screen_width - edge_padding - button_w
     button_y = 50
 
-    #color_button = Button(
+    # color_button = Button(
     #    x=button_x, y=button_y, width=button_w, height=button_h,
     #    inactive_image=os.path.join("assets", "color_inactive.png"), active_image=os.path.join("assets", "color_active.png"),
     #    tool="color wheel",
@@ -343,7 +343,7 @@ def create_right_buttons(edge_padding, button_padding, button_w, button_h, scree
     #    action=set_active_tool # Pass the function reference
     #)
     
-    button_y = button_y + (button_h + button_padding)*7
+    button_y = button_y + (button_h + button_padding)*6
     save_button = Button(
         x=button_x, y=button_y, width=button_w, height=button_h,
         inactive_image=os.path.join("assets", "save.png"), active_image=os.path.join("assets", "save.png"),
@@ -380,23 +380,38 @@ def create_right_buttons(edge_padding, button_padding, button_w, button_h, scree
     )
 
     global misc_buttons_list
-    #misc_buttons_list.extend([color_button, save_button, load_button, import_button, export_button])
+    # misc_buttons_list.extend([color_button, save_button, load_button, import_button, export_button])
     misc_buttons_list.extend([save_button, load_button, import_button, export_button])
 
 def create_color_buttons(x_edge_padding, y_edge_padding, button_padding, button_w, button_h, screen_height):
     # --- Create right side buttons ---
-    button_x = x_edge_padding + 50 + x_edge_padding + (button_w + button_padding)*2
+    button_x = x_edge_padding + 35 + x_edge_padding + (button_w + button_padding)*2
     button_y = screen_height - button_h - y_edge_padding
 
     colors = {
         "Eraser" : TRANSPARENT_BG,
         "Black"  : BLACK,
         "Gray"   : GRAY,
+        "Silver" : SILVER,
+        "White"  : WHITE,
+        "Pink"   : PINK,
         "Red"    : RED,
-        "Green"  : GREEN,
-        "Blue"   : BLUE,
+        "Orange" : ORANGE,
         "Yellow" : YELLOW,
-        "Purple" : PURPLE
+        "Green"  : GREEN,
+        "Cyan"   : CYAN,
+        "Blue"   : BLUE,
+        "Indigo" : INDIGO,
+        "Violet" : VIOLET,
+        "Purple" : PURPLE,
+        "Magenta": MAGENTA,
+        "Maroon" : MAROON,
+        "Brown"  : BROWN,
+        "Peach"  : PEACH,
+        "Gold"   : GOLD,
+        "Lime"   : LIME,
+        "Forest" : FOREST,
+        "Aqua"   : AQUA,
     }
 
     global color_buttons_list
@@ -473,7 +488,7 @@ def main():
     create_color_buttons(edge_padding, edge_padding, button_padding, color_button_w, color_button_h, screen_height)
 
     current_color_button = Button(
-        x=x_canvas_border_width, y=screen_height - color_button_h - edge_padding, width=color_button_w*2, height=color_button_h,
+        x=x_canvas_border_width, y=screen_height - color_button_h - edge_padding, width=color_button_w*1.5, height=color_button_h,
         inactive_color=current_color, active_color=current_color,
         border_color=BLACK,
         tool="color",
@@ -648,9 +663,9 @@ def main():
         screen.blit(font.render("Tools"  , True, BLACK), (edge_padding, 50-25))
         screen.blit(font.render("Shapes" , True, BLACK), (edge_padding, 50-25+(button_h+button_padding)*3))
         # Right side
-        screen.blit(font.render("Color"  , True, BLACK), (screen_width - edge_padding - button_w, 50-25))
-        screen.blit(font.render("Layers" , True, BLACK), (screen_width - edge_padding - button_w, 50-25+(button_h+button_padding)*2))
-        screen.blit(font.render("File"   , True, BLACK), (screen_width - edge_padding - button_w, 50-25+(button_h+button_padding)*7))
+        # screen.blit(font.render("Color"  , True, BLACK), (screen_width - edge_padding - button_w, 50-25))
+        screen.blit(font.render("Layers" , True, BLACK), (screen_width - edge_padding - button_w, 50-25))
+        screen.blit(font.render("File"   , True, BLACK), (screen_width - edge_padding - button_w, 50-30+(button_h+button_padding)*6))
 
         # Display mouse coordinate at the bottom left of the screen
         mouse_pos = pygame.mouse.get_pos()
@@ -677,13 +692,27 @@ def main():
 if __name__ == "__main__":
     # Define some colors
     BLACK = (0, 0, 0)
-    WHITE = (255, 255, 255)
     GRAY = (128, 128, 128)
+    SILVER = (192, 192, 192)
+    WHITE = (255, 255, 255)
+    PINK = (255, 192, 203)
     RED = (255, 0, 0)
-    GREEN = (0, 255, 0)
-    BLUE = (0, 0, 255)
+    ORANGE = (255, 165, 0)
     YELLOW = (255, 255, 0)
-    PURPLE = (128, 0, 128)
+    GREEN = (0, 255, 0)
+    CYAN = (0, 255, 255)
+    BLUE = (0, 0, 255)
+    INDIGO = (115, 0, 200)
+    VIOLET = (127, 0, 255)
+    PURPLE = (175, 0, 175)
+    MAGENTA = (224, 51, 159)
+    MAROON = (184, 18, 56)
+    BROWN = (150, 75, 0)
+    PEACH = (255, 229, 180)
+    GOLD = (212, 175, 55)
+    LIME = (191, 255, 55)
+    FOREST = (1, 142, 32)
+    AQUA = (0, 148, 148)
     CANVAS_BG = WHITE
     SCREEN_BG = GRAY
     TOOLTIP_BG = (255, 255, 200)
