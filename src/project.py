@@ -4,6 +4,39 @@ import sys
 import tkinter as tk
 from tkinter import filedialog
 
+class Layer:
+    """A class for creating a layer in Pygame."""
+    
+    def __init__(self, x, y, width, height, background_color=None):
+        """
+        Initializes the layer object.
+
+        :param x: The x-coordinate of the top-left corner to be displayed on screen.
+        :param y: The y-coordinate of the top-left corner to be displayed on screen.
+        :param width: The width of the layer.
+        :param height: The height of the layer.
+        :param background_color: The background color of this layer.  This will be set as transparent.
+        """
+
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.bg_color = background_color
+        self.is_visible = True
+        self.is_current = True
+        self.rect = pygame.Rect(x, y, width, height)
+        self.surface = pygame.Surface((width, height))
+        self.surface.set_colorkey(background_color)
+        self.surface.fill(background_color)
+
+    def clear(self):
+        self.surface.fill(self.bg_color)
+
+    def draw(self, screen):
+        """Draws the layer on the screen"""
+        screen.blit(self.surface, (self.x, self.y))
+
 class Button:
     """A class for creating clickable buttons in Pygame."""
     
@@ -500,15 +533,23 @@ def main():
     canvas_height = screen_height - y_canvas_border_width
     canvas_rect = pygame.Rect(x_canvas_border_width, 0, canvas_width, canvas_height)
 
-    # Create a separate surface for drawing.
-    layer0 = pygame.Surface((canvas_width, canvas_height))
-    layer0.set_colorkey(TRANSPARENT_BG) # Makes this color as transparent
-    layer0.fill(TRANSPARENT_BG)
+    # Create 1st drawing layer
+    layer0 = Layer(
+        x=x_canvas_border_width,
+        y=0,
+        width=canvas_width,
+        height=canvas_height,
+        background_color=TRANSPARENT_BG
+    )
 
     # Create a surface to draw temp shapes
-    tmp_layer = pygame.Surface((canvas_width, canvas_height))
-    tmp_layer.set_colorkey(TRANSPARENT_BG) # Makes this color as transparent
-    tmp_layer.fill(TRANSPARENT_BG)
+    tmp_layer = Layer(
+        x=x_canvas_border_width,
+        y=0,
+        width=canvas_width,
+        height=canvas_height,
+        background_color=TRANSPARENT_BG
+    )
 
     layers_list = [layer0]
     current_layer = layer0
@@ -554,9 +595,9 @@ def main():
                             if start_pos is None:
                                 start_pos = (event.pos[0] - x_canvas_border_width, event.pos[1])
                             else:
-                                tmp_layer.fill(TRANSPARENT_BG)
+                                tmp_layer.clear()
                                 current_pos = (event.pos[0] - x_canvas_border_width, event.pos[1])
-                                draw_shape(active_tool, current_layer, draw_color, start_pos, current_pos, shape_width)
+                                draw_shape(active_tool, current_layer.surface, draw_color, start_pos, current_pos, shape_width)
                                 start_pos = None
 
             # Mouse Button Up Event
@@ -568,8 +609,8 @@ def main():
                     # This section of code draws the shape for the click, drag, release operation
                     current_pos = (event.pos[0] - x_canvas_border_width, event.pos[1])
                     if active_tool in ["square", "rect", "circle", "oval", "triangle"] and start_pos is not None and current_pos != start_pos:
-                        tmp_layer.fill(TRANSPARENT_BG)
-                        draw_shape(active_tool, current_layer, draw_color, start_pos, current_pos, shape_width)
+                        tmp_layer.clear()
+                        draw_shape(active_tool, current_layer.surface, draw_color, start_pos, current_pos, shape_width)
                         start_pos = None
 
             # Mouse Motion Event
@@ -581,12 +622,12 @@ def main():
                             if last_pos:
                                 # Draw a line from the last position to the current position
                                 # This makes the drawing smooth rather than just dots
-                                pygame.draw.line(current_layer, draw_color, last_pos, current_pos, line_thickness)
+                                pygame.draw.line(current_layer.surface, draw_color, last_pos, current_pos, line_thickness)
                             last_pos = current_pos # Update last_pos for the next segment
                 
                 # Follow the mouse movement and draw the shape and tmp_layer
                 elif active_tool in ["square", "rect", "circle", "oval", "triangle"] and start_pos is not None:
-                    tmp_layer.fill(TRANSPARENT_BG)
+                    tmp_layer.clear()
                     current_pos = (event.pos[0] - x_canvas_border_width, event.pos[1])
                     if draw_color != eraser_color:
                         tmp_draw_color = draw_color
@@ -594,13 +635,13 @@ def main():
                     else:
                         tmp_draw_color = BLACK
                         tmp_shape_width = 1
-                    draw_shape(active_tool, tmp_layer, tmp_draw_color, start_pos, current_pos, tmp_shape_width)
+                    draw_shape(active_tool, tmp_layer.surface, tmp_draw_color, start_pos, current_pos, tmp_shape_width)
 
             # Keyboard Events
             if event.type == pygame.KEYDOWN:
                 # Clear Screen
                 if event.key == pygame.K_c:
-                    current_layer.fill(TRANSPARENT_BG) # Fill the canvas surface with background color
+                    current_layer.clear()
 
                 # Toggle shape fill
                 elif event.key == pygame.K_f:
@@ -611,9 +652,13 @@ def main():
 
                 # Add a layer
                 elif event.key == pygame.K_EQUALS:
-                    new_layer = pygame.Surface((canvas_width, canvas_height))
-                    new_layer.set_colorkey(TRANSPARENT_BG) # Makes this color as transparent
-                    new_layer.fill(TRANSPARENT_BG)
+                    new_layer = Layer(
+                        x=x_canvas_border_width,
+                        y=0,
+                        width=canvas_width,
+                        height=canvas_height,
+                        background_color=TRANSPARENT_BG
+                    )
                     layers_list.append(new_layer)
                     current_layer_history.append(current_layer)
                     current_layer = new_layer
@@ -641,8 +686,13 @@ def main():
         # --- Drawing ---
         # Draw layers
         for layer in layers_list:
-            screen.blit(layer, (x_canvas_border_width, 0))
-        screen.blit(tmp_layer, (x_canvas_border_width, 0))
+            if layer == current_layer:
+                layer.is_current = True
+            else:
+                layer.is_current = False
+            layer.draw(screen)
+
+        tmp_layer.draw(screen)
 
         # Draw the buttons onto the on screen
         for button in tool_buttons_list:
