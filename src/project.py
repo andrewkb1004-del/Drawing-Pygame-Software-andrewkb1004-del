@@ -1,11 +1,13 @@
 import pygame
 import os
 import sys
+import tkinter as tk
+from tkinter import filedialog
 
 class Button:
     """A class for creating clickable buttons in Pygame."""
     
-    def __init__(self, x, y, width, height, inactive_image, active_image, tool="None", tooltip_text="", action=None):
+    def __init__(self, x, y, width, height, inactive_image=None, active_image=None, inactive_color=None, active_color=None, border_color=None, text=None, text_color=None, tool="None", tooltip_text="", action=None):
         """
         Initializes the button object.
 
@@ -15,13 +17,33 @@ class Button:
         :param height: The height of the button.
         :param inactive_image: The image to show when the mouse is not hovering above the button.
         :param active_image: The image when the mouse is hovering above the button.
+        :param inactive_color: The color to show when the mouse is not hovering above the button. Should not use with together with image.
+        :param active_color: The color when the mouse is hovering above the button. Should not use with together with image.
+        :param border_color: The color of the border around the button.
+        :param text: The text to displayed at the center of the button.
+        :param text_color: The color of the text.
         :param tool: Specify the tool associated with this button.
         :param tooltip_text: Specify the text to display when the mouse is hovering over the button.
         :param action: The function to call when the button is clicked.
         """
+
         self.rect = pygame.Rect(x, y, width, height)
-        self.inactive_image = pygame.transform.scale(pygame.image.load(inactive_image), (width, height))
-        self.active_image = pygame.transform.scale(pygame.image.load(active_image), (width, height))
+        if inactive_image is not None:
+            self.inactive_image = pygame.transform.scale(pygame.image.load(inactive_image), (width, height))
+        else:
+            self.inactive_image = None
+        if active_image is not None:
+            self.active_image = pygame.transform.scale(pygame.image.load(active_image), (width, height))
+        else:
+            self.active_image = None
+        self.inactive_color = inactive_color
+        self.active_color = active_color
+        self.border_color = border_color
+        self.text = text
+        if text_color is not None:
+            self.text_color = text_color
+        else:
+            self.text_color = (0, 0, 0) # Black text
         self.action = action
         self.tooltip = tooltip_text
         self.is_active = False
@@ -29,7 +51,6 @@ class Button:
 
         # Setup Font
         self.font = pygame.font.SysFont('Arial', 12)
-        self.text_color = (0, 0, 0) # Black text
 
     def draw(self, screen):
         """Draws the button on the screen, changing color on hover."""
@@ -38,11 +59,27 @@ class Button:
         # Determine current state based on hover
         if self.rect.collidepoint(mouse_pos) or self.is_active:
             current_image = self.active_image
+            current_color = self.active_color
         else:
             current_image = self.inactive_image
+            current_color = self.inactive_color
             
         # Draw the button
-        screen.blit(current_image, (self.rect.left, self.rect.top))
+        if current_image is not None:
+            screen.blit(current_image, (self.rect.left, self.rect.top))
+        elif current_color is not None:
+            pygame.draw.rect(screen, current_color, self.rect)
+
+        # Draw text
+        if self.text is not None:
+            text_surf = self.font.render(self.text, True, self.text_color)       
+            text_rect = text_surf.get_rect(center=self.rect.center)
+            screen.blit(text_surf, text_rect)
+
+        # Draw border
+        if self.border_color is not None:
+            pygame.draw.rect(screen, self.border_color, self.rect, 1)
+
 
     def draw_tooltip(self, screen):
         """Draws the button on the screen, changing color on hover."""
@@ -72,13 +109,17 @@ class Button:
                 # Check if the click occurred within the button area
                 if self.rect.collidepoint(mouse_pos):
                     # Execute the button's action if one is defined
-                    self.is_active = True
+                    if self.is_active:
+                        self.is_active = False
+                    else:
+                        self.is_active = True
                     if self.action is not None:
                         self.action(self)
-                        return True # Return True if the button was clicked
+                    return True # Return True if the button was clicked
         return False # Return False otherwise
 
 # --- Define action functions for buttons ---
+
 def quit_program(instance):
     """Function to exit the program."""
     global running
@@ -86,13 +127,65 @@ def quit_program(instance):
     #print("Exiting ...")
 
 def set_active_tool(instance):
-    """Function to set pen as current active tool."""
+    """Function to set current active tool."""
     global active_tool
     global start_pos
 
     start_pos = None
-    active_tool = instance.tool
+    if instance.is_active and instance.tool in ["pen", "eraser", "square", "rect", "circle", "oval", "triangle"]:
+        active_tool = instance.tool
+    else:
+        active_tool = "None"
     #print(f"Set {active_tool} as active!")
+
+def open_file_dialog():
+    # Create a hidden root window
+    root = tk.Tk()
+    root.withdraw()
+
+    # Open the file dialog
+    file_path = filedialog.askopenfilename(
+        title="Select a file",
+        filetypes=[("All Files", "*.*"), ("Text Files", "*.txt"), ("Python Files", "*.py")]
+    )
+
+    return file_path
+
+def save_file_dialog():
+    # Create a hidden root window
+    root = tk.Tk()
+    root.withdraw()
+
+    # Save file dialog
+    file_path = filedialog.asksaveasfilename(
+        title="Save file as",
+        defaultextension=".txt",  # Default extension
+        filetypes=[("Text Files", "*.txt"), ("Python Files", "*.py"), ("All Files", "*.*")]
+    )
+
+    return file_path
+
+def load_file(instance):
+    file_path = open_file_dialog()
+    print(f"File to load is {file_path}")
+
+def save_file(instance):
+    file_path = save_file_dialog()
+    print(f"File to save is {file_path}")
+
+def import_file(instance):
+    file_path = open_file_dialog()
+    print(f"File to import is {file_path}")
+
+def export_file(instance):
+    file_path = save_file_dialog()
+    print(f"File to export is {file_path}")
+        
+def set_active_color(instance):
+    """Function to set current color."""
+    global current_color
+    current_color = instance.active_color
+    #print(f"Set {instance.tooltip} as active color!")
 
 def get_square(pos1, pos2):
     x1, y1 = pos1[0], pos1[1]
@@ -234,21 +327,21 @@ def create_left_buttons(edge_padding, button_padding, button_w, button_h):
         action=quit_program # Pass the function reference
     )
 
-    global buttons_list
-    buttons_list.extend([pen_button, eraser_button, square_button, rect_button, circle_button, oval_button, triangle_button, quit_button])    
+    global tool_buttons_list
+    tool_buttons_list.extend([pen_button, eraser_button, square_button, rect_button, circle_button, oval_button, triangle_button, quit_button])    
 
 def create_right_buttons(edge_padding, button_padding, button_w, button_h, screen_width):
     # --- Create right side buttons ---
     button_x = screen_width - edge_padding - button_w
     button_y = 50
 
-    color_button = Button(
-        x=button_x, y=button_y, width=button_w, height=button_h,
-        inactive_image=os.path.join("assets", "color_inactive.png"), active_image=os.path.join("assets", "color_active.png"),
-        tool="color bar",
-        tooltip_text="Color Bar",
-        action=set_active_tool # Pass the function reference
-    )
+    #color_button = Button(
+    #    x=button_x, y=button_y, width=button_w, height=button_h,
+    #    inactive_image=os.path.join("assets", "color_inactive.png"), active_image=os.path.join("assets", "color_active.png"),
+    #    tool="color wheel",
+    #    tooltip_text="Color Wheel",
+    #    action=set_active_tool # Pass the function reference
+    #)
     
     button_y = button_y + (button_h + button_padding)*7
     save_button = Button(
@@ -256,7 +349,7 @@ def create_right_buttons(edge_padding, button_padding, button_w, button_h, scree
         inactive_image=os.path.join("assets", "save.png"), active_image=os.path.join("assets", "save.png"),
         tool="save",
         tooltip_text="Save",
-        action=set_active_tool # Pass the function reference
+        action=save_file # Pass the function reference
     )
     
     button_y = button_y + button_h + button_padding
@@ -265,7 +358,7 @@ def create_right_buttons(edge_padding, button_padding, button_w, button_h, scree
         inactive_image=os.path.join("assets", "load.png"), active_image=os.path.join("assets", "load.png"),
         tool="load",
         tooltip_text="Load",
-        action=set_active_tool # Pass the function reference
+        action=load_file # Pass the function reference
     )
 
     button_y = button_y + button_h + button_padding
@@ -274,7 +367,7 @@ def create_right_buttons(edge_padding, button_padding, button_w, button_h, scree
         inactive_image=os.path.join("assets", "import.png"), active_image=os.path.join("assets", "import.png"),
         tool="import",
         tooltip_text="Import",
-        action=set_active_tool # Pass the function reference
+        action=import_file # Pass the function reference
     )
 
     button_y = button_y + button_h + button_padding
@@ -283,11 +376,42 @@ def create_right_buttons(edge_padding, button_padding, button_w, button_h, scree
         inactive_image=os.path.join("assets", "export.png"), active_image=os.path.join("assets", "export.png"),
         tool="export",
         tooltip_text="Export",
-        action=set_active_tool # Pass the function reference
+        action=export_file # Pass the function reference
     )
 
-    global buttons_list
-    buttons_list.extend([color_button, save_button, load_button, import_button, export_button])
+    global misc_buttons_list
+    #misc_buttons_list.extend([color_button, save_button, load_button, import_button, export_button])
+    misc_buttons_list.extend([save_button, load_button, import_button, export_button])
+
+def create_color_buttons(x_edge_padding, y_edge_padding, button_padding, button_w, button_h, screen_height):
+    # --- Create right side buttons ---
+    button_x = x_edge_padding + 50 + x_edge_padding + (button_w + button_padding)*2
+    button_y = screen_height - button_h - y_edge_padding
+
+    colors = {
+        "Eraser" : TRANSPARENT_BG,
+        "Black"  : BLACK,
+        "Gray"   : GRAY,
+        "Red"    : RED,
+        "Green"  : GREEN,
+        "Blue"   : BLUE,
+        "Yellow" : YELLOW,
+        "Purple" : PURPLE
+    }
+
+    global color_buttons_list
+    for tooltip, color in colors.items():
+        tmp_button = Button(
+            x=button_x, y=button_y, width=button_w, height=button_h,
+            inactive_color=color, active_color=color,
+            border_color=BLACK,
+            tool="color",
+            tooltip_text=tooltip,
+            action=set_active_color
+        )
+        color_buttons_list.append((tmp_button))
+        button_x = button_x + button_w + button_padding
+    
 
 def draw_shape(active_tool, layer, draw_color, start_pos, current_pos, shape_width):
     if active_tool == "square":
@@ -301,6 +425,12 @@ def draw_shape(active_tool, layer, draw_color, start_pos, current_pos, shape_wid
         pygame.draw.ellipse(layer, draw_color, get_rect(start_pos, current_pos), shape_width)
     elif active_tool == "triangle":
         pygame.draw.polygon(layer, draw_color, get_triangle(start_pos, current_pos), shape_width)
+
+def is_pos_in_canvas(pos, canvas_rect):
+    if canvas_rect.collidepoint(pos):
+        return True
+    else:
+        return False
 
 def main():
     pygame.init()
@@ -318,6 +448,7 @@ def main():
         screen = pygame.display.set_mode(resolution)
 
     line_thickness = 2 # Initial brush size
+    global current_color
     current_color = BLACK # Default drawing color
     fps = 60
 
@@ -325,19 +456,42 @@ def main():
     button_padding = 10
     button_w = 50
     button_h = 50
+    x_canvas_border_width = edge_padding + button_w + edge_padding
 
-    global buttons_list
-    buttons_list = []
+    global tool_buttons_list
+    tool_buttons_list = []
     create_left_buttons(edge_padding, button_padding, button_w, button_h)
+
+    global misc_buttons_list
+    misc_buttons_list = []
     create_right_buttons(edge_padding, button_padding, button_w, button_h, screen_width)
 
+    global color_buttons_list
+    color_buttons_list = []
+    color_button_w = 30
+    color_button_h = 30
+    create_color_buttons(edge_padding, edge_padding, button_padding, color_button_w, color_button_h, screen_height)
+
+    current_color_button = Button(
+        x=x_canvas_border_width, y=screen_height - color_button_h - edge_padding, width=color_button_w*2, height=color_button_h,
+        inactive_color=current_color, active_color=current_color,
+        border_color=BLACK,
+        tool="color",
+        tooltip_text="Current Color",
+    )
+    
+    y_canvas_border_width = edge_padding * 2 + color_button_h
+    canvas_width = screen_width - x_canvas_border_width*2
+    canvas_height = screen_height - y_canvas_border_width
+    canvas_rect = pygame.Rect(x_canvas_border_width, 0, canvas_width, canvas_height)
+
     # Create a separate surface for drawing.
-    canvas_border_width = edge_padding + button_w + edge_padding
-    layer0 = pygame.Surface((screen_width - canvas_border_width*2, screen_height))
-    layer0.fill(CANVAS_BG)
+    layer0 = pygame.Surface((canvas_width, canvas_height))
+    layer0.set_colorkey(TRANSPARENT_BG) # Makes this color as transparent
+    layer0.fill(TRANSPARENT_BG)
 
     # Create a surface to draw temp shapes
-    tmp_layer = pygame.Surface((screen_width - canvas_border_width*2, screen_height))
+    tmp_layer = pygame.Surface((canvas_width, canvas_height))
     tmp_layer.set_colorkey(TRANSPARENT_BG) # Makes this color as transparent
     tmp_layer.fill(TRANSPARENT_BG)
 
@@ -356,12 +510,15 @@ def main():
     clock = pygame.time.Clock() # To control the frame rate
     start_pos = None # Use for square, rect, circle, oval, and triangle
     shape_width = 0  # Set to 0 to have the shape filled. Set to non-zero to specify the line width of the shape edges
+    eraser_color = TRANSPARENT_BG
+    current_layer_history = []
 
     while running:
-        screen.fill(SCREEN_BG)
+        screen.fill(SCREEN_BG)                            # Fill the entire screen with SCREEN_BG color (e.g. gray)
+        pygame.draw.rect(screen, CANVAS_BG, canvas_rect)  # Fill just the canvas area with CANVAS_BG color (e.g. white)
 
         if active_tool == "eraser":
-            draw_color = CANVAS_BG
+            draw_color = eraser_color
         else:
             draw_color = current_color
 
@@ -374,16 +531,16 @@ def main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # Left mouse button
                     mouse_button_down = True
-                    if event.pos[0] > canvas_border_width and event.pos[0] < screen_width - canvas_border_width:
-                        last_pos = (event.pos[0] - canvas_border_width, event.pos[1]) # Start drawing from current position
+                    if is_pos_in_canvas(event.pos, canvas_rect):
+                        last_pos = (event.pos[0] - x_canvas_border_width, event.pos[1]) # Start drawing from current position
 
                         # This section of code draws the shape for the click, release, click operation
                         if active_tool in ["square", "rect", "circle", "oval", "triangle"]:
                             if start_pos is None:
-                                start_pos = (event.pos[0] - canvas_border_width, event.pos[1])
+                                start_pos = (event.pos[0] - x_canvas_border_width, event.pos[1])
                             else:
                                 tmp_layer.fill(TRANSPARENT_BG)
-                                current_pos = (event.pos[0] - canvas_border_width, event.pos[1])
+                                current_pos = (event.pos[0] - x_canvas_border_width, event.pos[1])
                                 draw_shape(active_tool, current_layer, draw_color, start_pos, current_pos, shape_width)
                                 start_pos = None
 
@@ -394,7 +551,7 @@ def main():
                     last_pos = None # Reset last_pos when button is released
 
                     # This section of code draws the shape for the click, drag, release operation
-                    current_pos = (event.pos[0] - canvas_border_width, event.pos[1])
+                    current_pos = (event.pos[0] - x_canvas_border_width, event.pos[1])
                     if active_tool in ["square", "rect", "circle", "oval", "triangle"] and start_pos is not None and current_pos != start_pos:
                         tmp_layer.fill(TRANSPARENT_BG)
                         draw_shape(active_tool, current_layer, draw_color, start_pos, current_pos, shape_width)
@@ -404,8 +561,8 @@ def main():
             if event.type == pygame.MOUSEMOTION:
                 if active_tool in ["pen", "eraser"]:
                     if mouse_button_down:
-                        if event.pos[0] > canvas_border_width and event.pos[0] < screen_width - canvas_border_width:
-                            current_pos = (event.pos[0] - canvas_border_width, event.pos[1])
+                        if is_pos_in_canvas(event.pos, canvas_rect):
+                            current_pos = (event.pos[0] - x_canvas_border_width, event.pos[1])
                             if last_pos:
                                 # Draw a line from the last position to the current position
                                 # This makes the drawing smooth rather than just dots
@@ -415,30 +572,20 @@ def main():
                 # Follow the mouse movement and draw the shape and tmp_layer
                 elif active_tool in ["square", "rect", "circle", "oval", "triangle"] and start_pos is not None:
                     tmp_layer.fill(TRANSPARENT_BG)
-                    current_pos = (event.pos[0] - canvas_border_width, event.pos[1])
-                    draw_shape(active_tool, tmp_layer, draw_color, start_pos, current_pos, shape_width)
+                    current_pos = (event.pos[0] - x_canvas_border_width, event.pos[1])
+                    if draw_color != eraser_color:
+                        tmp_draw_color = draw_color
+                        tmp_shape_width = shape_width
+                    else:
+                        tmp_draw_color = BLACK
+                        tmp_shape_width = 1
+                    draw_shape(active_tool, tmp_layer, tmp_draw_color, start_pos, current_pos, tmp_shape_width)
 
             # Keyboard Events
             if event.type == pygame.KEYDOWN:
-                # Change Color
-                if event.key == pygame.K_1:
-                    current_color = BLACK
-                elif event.key == pygame.K_2:
-                    current_color = RED
-                elif event.key == pygame.K_3:
-                    current_color = GREEN
-                elif event.key == pygame.K_4:
-                    current_color = BLUE
-                elif event.key == pygame.K_5:
-                    current_color = YELLOW
-                elif event.key == pygame.K_6:
-                    current_color = PURPLE
-                elif event.key == pygame.K_0: # Assign background_color to key 0.  This is essentially the eraser.
-                    current_color = CANVAS_BG
-
                 # Clear Screen
-                elif event.key == pygame.K_c:
-                    current_layer.fill(CANVAS_BG) # Fill the canvas surface with background color
+                if event.key == pygame.K_c:
+                    current_layer.fill(TRANSPARENT_BG) # Fill the canvas surface with background color
 
                 # Toggle shape fill
                 elif event.key == pygame.K_f:
@@ -447,29 +594,53 @@ def main():
                     else:
                         shape_width = 0
 
+                # Add a layer
+                elif event.key == pygame.K_EQUALS:
+                    new_layer = pygame.Surface((canvas_width, canvas_height))
+                    new_layer.set_colorkey(TRANSPARENT_BG) # Makes this color as transparent
+                    new_layer.fill(TRANSPARENT_BG)
+                    layers_list.append(new_layer)
+                    current_layer_history.append(current_layer)
+                    current_layer = new_layer
+
+                # Delete current layer
+                elif event.key == pygame.K_MINUS:
+                    if len(layers_list) > 1:
+                        layers_list.remove(current_layer)
+                        current_layer = current_layer_history.pop() # Assign previous active layer to current_layer
+
                 # Change Brush Size
                 elif event.key == pygame.K_LEFTBRACKET: # [ key
                     line_thickness = max(1, line_thickness - 1) # Decrease, min 1
-                    shape_width = line_thickness
+                    if shape_width != 0:
+                        shape_width = line_thickness
                 elif event.key == pygame.K_RIGHTBRACKET: # ] key
                     line_thickness = min(50, line_thickness + 1) # Increase, max 50
-                    shape_width = line_thickness
+                    if shape_width != 0:
+                        shape_width = line_thickness
 
             # Handling event for the buttons
-            for button in buttons_list:
+            for button in tool_buttons_list + misc_buttons_list + color_buttons_list:
                 button.handle_event(event)
 
         # --- Drawing ---
         # Draw layers
         for layer in layers_list:
-            screen.blit(layer, (canvas_border_width, 0))
-        screen.blit(tmp_layer, (canvas_border_width, 0))
+            screen.blit(layer, (x_canvas_border_width, 0))
+        screen.blit(tmp_layer, (x_canvas_border_width, 0))
 
         # Draw the buttons onto the on screen
-        for button in buttons_list:
+        for button in tool_buttons_list:
             if button.tool != active_tool:
                 button.is_active = False
             button.draw(screen)  
+
+        for button in misc_buttons_list + color_buttons_list:
+            button.draw(screen)
+
+        # Draw the current color
+        current_color_button.active_color = current_color_button.inactive_color = current_color
+        current_color_button.draw(screen)
 
         # Draw the button section texts on the screen
         font = pygame.font.SysFont('Arial', 18, bold=True)
@@ -483,14 +654,15 @@ def main():
 
         # Display mouse coordinate at the bottom left of the screen
         mouse_pos = pygame.mouse.get_pos()
-        mouse_coordinate_text = f"{mouse_pos[0]- canvas_border_width} , {mouse_pos[1]}"
+        mouse_coordinate_text = f"{mouse_pos[0]- x_canvas_border_width} , {mouse_pos[1]}"
         font = pygame.font.SysFont('Arial', 12)
         mouse_coor_surface = font.render(mouse_coordinate_text , True, BLACK)
         screen.blit(mouse_coor_surface, (15, screen_height-15))
 
         # Draw button tooltip on the screen
-        for button in buttons_list:
+        for button in tool_buttons_list + misc_buttons_list + color_buttons_list:
             button.draw_tooltip(screen)        
+        current_color_button.draw_tooltip(screen)
 
         # --- Update the Display ---
         pygame.display.flip()
@@ -516,5 +688,12 @@ if __name__ == "__main__":
     SCREEN_BG = GRAY
     TOOLTIP_BG = (255, 255, 200)
     TRANSPARENT_BG = (255, 254, 253)
+
+    ## To open file dialogue
+    #selected_file = load_file
+    #if selected_file:
+    #    print(f"Selected file: {selected_file}")
+    #else:
+    #    print("No file selected.")
 
     main()
