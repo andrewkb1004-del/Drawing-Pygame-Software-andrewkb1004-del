@@ -220,6 +220,32 @@ def set_active_color(instance):
     current_color = instance.active_color
     #print(f"Set {instance.tooltip} as active color!")
 
+def decrease_lw(instance):
+    global line_thickness
+    global shape_width
+    line_thickness = max(1, line_thickness - 1) # Decrease, min 1
+    if shape_width != 0:
+        shape_width = line_thickness
+
+def increase_lw(instance):
+    global line_thickness
+    global shape_width
+    line_thickness = min(50, line_thickness + 1) # Increase, max 50
+    if shape_width != 0:
+        shape_width = line_thickness
+
+def decrease_alpha(instance):
+    global alpha
+    alpha_pct = int(round(alpha * 100 / 255 / 5.0) * 5)
+    alpha_pct = max(5, alpha_pct - 5) # Decrease, min 5%
+    alpha = int(alpha_pct / 100 * 255)
+
+def increase_alpha(instance):
+    global alpha
+    alpha_pct = int(round(alpha * 100 / 255 / 5.0) * 5)
+    alpha_pct = min(100, alpha_pct + 5) # Increase, max 100%
+    alpha = int(alpha_pct / 100 * 255)
+
 def get_square(pos1, pos2):
     x1, y1 = pos1[0], pos1[1]
     x2, y2 = pos2[0], pos2[1]
@@ -417,7 +443,7 @@ def create_right_buttons(edge_padding, button_padding, button_w, button_h, scree
     misc_buttons_list.extend([save_button, load_button, import_button, export_button])
 
 def create_color_buttons(x_edge_padding, y_edge_padding, button_padding, button_w, button_h, screen_height):
-    # --- Create right side buttons ---
+    # --- Create color buttons at the bottom side ---
     button_x = x_edge_padding + 35 + x_edge_padding + (button_w + button_padding)*2
     button_y = screen_height - button_h - y_edge_padding
 
@@ -460,6 +486,83 @@ def create_color_buttons(x_edge_padding, y_edge_padding, button_padding, button_
         color_buttons_list.append((tmp_button))
         button_x = button_x + button_w + button_padding
     
+def create_lw_a_buttons(x_edge_padding, y_edge_padding, button_padding, button_w, button_h, screen_width, screen_height, lw, alpha):
+    # --- Create the line_width and alpha buttons at the bottom right corner---
+    button_x = screen_width - x_edge_padding - (button_w + button_padding)*14
+    button_y = screen_height - button_h - y_edge_padding
+
+    lw_label_button = Button(
+        x=button_x, y=button_y, width=button_w, height=button_h,
+        inactive_color=SCREEN_BG, active_color=SCREEN_BG,
+        border_color=SCREEN_BG,
+        text="LW:"
+    )
+    button_x = button_x + button_w + button_padding
+    lw_minus_button = Button(
+        x=button_x, y=button_y, width=button_w, height=button_h,
+        inactive_color=SILVER, active_color=SCREEN_BG,
+        border_color=BLACK,
+        text="-",
+        tooltip_text="Decrease line width",
+        action=decrease_lw
+    )
+    button_x = button_x + button_w + button_padding
+    global lw_value_button
+    lw_value_button = Button(
+        x=button_x, y=button_y, width=button_w, height=button_h,
+        inactive_color=SILVER, active_color=SILVER,
+        border_color=BLACK,
+        text=f"{lw}"
+    )
+    button_x = button_x + button_w + button_padding
+    lw_plus_button = Button(
+        x=button_x, y=button_y, width=button_w, height=button_h,
+        inactive_color=SILVER, active_color=SCREEN_BG,
+        border_color=BLACK,
+        text="+",
+        tooltip_text="Increase line width",
+        action=increase_lw
+    )
+
+    button_x = screen_width - x_edge_padding - (button_w + button_padding)*7
+    alpha_label_button = Button(
+        x=button_x, y=button_y, width=button_w, height=button_h,
+        inactive_color=SCREEN_BG, active_color=SCREEN_BG,
+        border_color=SCREEN_BG,
+        text="Alpha:"
+    )
+    button_x = button_x + button_w + button_padding
+    alpha_minus_button = Button(
+        x=button_x, y=button_y, width=button_w, height=button_h,
+        inactive_color=SILVER, active_color=SCREEN_BG,
+        border_color=BLACK,
+        text="-",
+        tooltip_text="Decrease line width",
+        action=decrease_alpha
+    )
+    button_x = button_x + button_w + button_padding
+    global alpha_value_button
+    alpha_percent = int(round(alpha * 100 / 255))
+    alpha_value_button = Button(
+        x=button_x, y=button_y, width=button_w, height=button_h,
+        inactive_color=SILVER, active_color=SILVER,
+        border_color=BLACK,
+        text=f"{alpha_percent}%"
+    )
+    button_x = button_x + button_w + button_padding
+    alpha_plus_button = Button(
+        x=button_x, y=button_y, width=button_w, height=button_h,
+        inactive_color=SILVER, active_color=SCREEN_BG,
+        border_color=BLACK,
+        text="+",
+        tooltip_text="Increase line width",
+        action=increase_alpha
+    )
+
+    global lw_a_buttons_list
+    lw_a_buttons_list.extend([lw_label_button, lw_minus_button, lw_value_button, lw_plus_button, 
+                              alpha_label_button, alpha_minus_button, alpha_value_button, alpha_plus_button])
+
 
 def draw_shape(active_tool, layer, draw_color, start_pos, current_pos, shape_width):
     if active_tool == "square":
@@ -495,7 +598,10 @@ def main():
         resolution = (screen_width, screen_height)
         screen = pygame.display.set_mode(resolution)
 
+    global line_thickness
     line_thickness = 2 # Initial brush size
+    global alpha
+    alpha = 255
     global current_color
     current_color = BLACK # Default drawing color
     fps = 60
@@ -527,6 +633,10 @@ def main():
         tool="color",
         tooltip_text="Current Color",
     )
+
+    global lw_a_buttons_list
+    lw_a_buttons_list = []
+    create_lw_a_buttons(edge_padding, edge_padding, 0, color_button_w, color_button_h, screen_width, screen_height, line_thickness, alpha)
     
     y_canvas_border_width = edge_padding * 2 + color_button_h
     canvas_width = screen_width - x_canvas_border_width*2
@@ -565,6 +675,7 @@ def main():
     last_pos = None # To store the last mouse position for continuous lines
     clock = pygame.time.Clock() # To control the frame rate
     start_pos = None # Use for square, rect, circle, oval, and triangle
+    global shape_width
     shape_width = 0  # Set to 0 to have the shape filled. Set to non-zero to specify the line width of the shape edges
     eraser_color = TRANSPARENT_BG
     current_layer_history = []
@@ -680,7 +791,7 @@ def main():
                         shape_width = line_thickness
 
             # Handling event for the buttons
-            for button in tool_buttons_list + misc_buttons_list + color_buttons_list:
+            for button in tool_buttons_list + misc_buttons_list + color_buttons_list + lw_a_buttons_list:
                 button.handle_event(event)
 
         # --- Drawing ---
@@ -701,6 +812,17 @@ def main():
             button.draw(screen)  
 
         for button in misc_buttons_list + color_buttons_list:
+            button.draw(screen)
+
+        lw_value_button.text=f"{line_thickness}"
+        for button in lw_a_buttons_list:
+            button.is_active = False
+            button.draw(screen)
+
+        alpha_percent = int(round(alpha * 100 / 255))
+        alpha_value_button.text=f"{alpha_percent}%"
+        for button in lw_a_buttons_list:
+            button.is_active = False
             button.draw(screen)
 
         # Draw the current color
@@ -725,7 +847,7 @@ def main():
         screen.blit(mouse_coor_surface, (15, screen_height-15))
 
         # Draw button tooltip on the screen
-        for button in tool_buttons_list + misc_buttons_list + color_buttons_list:
+        for button in tool_buttons_list + misc_buttons_list + color_buttons_list + lw_a_buttons_list:
             button.draw_tooltip(screen)        
         current_color_button.draw_tooltip(screen)
 
@@ -769,10 +891,10 @@ if __name__ == "__main__":
     TRANSPARENT_BG = (255, 254, 253)
 
     ## To open file dialogue
-    #selected_file = load_file
-    #if selected_file:
+    # selected_file = load_file
+    # if selected_file:
     #    print(f"Selected file: {selected_file}")
-    #else:
+    # else:
     #    print("No file selected.")
 
     main()
