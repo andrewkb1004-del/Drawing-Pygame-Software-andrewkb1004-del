@@ -2,3 +2,5 @@ pygame
 pillow
 os
 sys
+tkinter
+filedialog
