@@ -26,7 +26,7 @@ class Layer:
         self.is_visible = True
         self.is_current = True
         self.rect = pygame.Rect(x, y, width, height)
-        self.surface = pygame.Surface((width, height))
+        self.surface = pygame.Surface((width, height), pygame.SRCALPHA)
         self.surface.set_colorkey(background_color)
         self.surface.fill(background_color)
 
@@ -59,7 +59,9 @@ class Button:
         :param tooltip_text: Specify the text to display when the mouse is hovering over the button.
         :param action: The function to call when the button is clicked.
         """
-
+        
+        self.x = x
+        self.y = y
         self.rect = pygame.Rect(x, y, width, height)
         if inactive_image is not None:
             self.inactive_image = pygame.transform.scale(pygame.image.load(inactive_image), (width, height))
@@ -99,7 +101,7 @@ class Button:
             
         # Draw the button
         if current_image is not None:
-            screen.blit(current_image, (self.rect.left, self.rect.top))
+            screen.blit(current_image, (self.x, self.y))
         elif current_color is not None:
             pygame.draw.rect(screen, current_color, self.rect)
 
@@ -565,17 +567,19 @@ def create_lw_a_buttons(x_edge_padding, y_edge_padding, button_padding, button_w
 
 
 def draw_shape(active_tool, layer, draw_color, start_pos, current_pos, shape_width):
+    tmp_surface = pygame.Surface((layer.get_width(), layer.get_height()), pygame.SRCALPHA)
     if active_tool == "square":
-        pygame.draw.rect(layer, draw_color, get_square(start_pos, current_pos), shape_width)
+        pygame.draw.rect(tmp_surface, draw_color, get_square(start_pos, current_pos), shape_width)
     elif active_tool == "rect":
-        pygame.draw.rect(layer, draw_color, get_rect(start_pos, current_pos), shape_width)
+        pygame.draw.rect(tmp_surface, draw_color, get_rect(start_pos, current_pos), shape_width)
     elif active_tool == "circle":
         x, y , radius = get_circle(start_pos, current_pos)
-        pygame.draw.circle(layer, draw_color, (x, y), radius, shape_width)
+        pygame.draw.circle(tmp_surface, draw_color, (x, y), radius, shape_width)
     elif active_tool == "oval":
-        pygame.draw.ellipse(layer, draw_color, get_rect(start_pos, current_pos), shape_width)
+        pygame.draw.ellipse(tmp_surface, draw_color, get_rect(start_pos, current_pos), shape_width)
     elif active_tool == "triangle":
-        pygame.draw.polygon(layer, draw_color, get_triangle(start_pos, current_pos), shape_width)
+        pygame.draw.polygon(tmp_surface, draw_color, get_triangle(start_pos, current_pos), shape_width)
+    layer.blit(tmp_surface, (0, 0))
 
 def is_pos_in_canvas(pos, canvas_rect):
     if canvas_rect.collidepoint(pos):
@@ -708,7 +712,7 @@ def main():
                             else:
                                 tmp_layer.clear()
                                 current_pos = (event.pos[0] - x_canvas_border_width, event.pos[1])
-                                draw_shape(active_tool, current_layer.surface, draw_color, start_pos, current_pos, shape_width)
+                                draw_shape(active_tool, current_layer.surface, draw_color+(alpha,), start_pos, current_pos, shape_width)
                                 start_pos = None
 
             # Mouse Button Up Event
@@ -721,7 +725,7 @@ def main():
                     current_pos = (event.pos[0] - x_canvas_border_width, event.pos[1])
                     if active_tool in ["square", "rect", "circle", "oval", "triangle"] and start_pos is not None and current_pos != start_pos:
                         tmp_layer.clear()
-                        draw_shape(active_tool, current_layer.surface, draw_color, start_pos, current_pos, shape_width)
+                        draw_shape(active_tool, current_layer.surface, draw_color+(alpha,), start_pos, current_pos, shape_width)
                         start_pos = None
 
             # Mouse Motion Event
@@ -733,12 +737,13 @@ def main():
                             if last_pos:
                                 # Draw a line from the last position to the current position
                                 # This makes the drawing smooth rather than just dots
-                                pygame.draw.line(current_layer.surface, draw_color, last_pos, current_pos, line_thickness)
+                                pygame.draw.line(current_layer.surface, draw_color+(alpha,), last_pos, current_pos, line_thickness)
                             last_pos = current_pos # Update last_pos for the next segment
                 
                 # Follow the mouse movement and draw the shape and tmp_layer
                 elif active_tool in ["square", "rect", "circle", "oval", "triangle"] and start_pos is not None:
                     tmp_layer.clear()
+                    tmp_layer.surface.blit(current_layer.surface, (0,0))
                     current_pos = (event.pos[0] - x_canvas_border_width, event.pos[1])
                     if draw_color != eraser_color:
                         tmp_draw_color = draw_color
@@ -746,7 +751,7 @@ def main():
                     else:
                         tmp_draw_color = BLACK
                         tmp_shape_width = 1
-                    draw_shape(active_tool, tmp_layer.surface, tmp_draw_color, start_pos, current_pos, tmp_shape_width)
+                    draw_shape(active_tool, tmp_layer.surface, tmp_draw_color+(alpha,), start_pos, current_pos, tmp_shape_width)
 
             # Keyboard Events
             if event.type == pygame.KEYDOWN:
@@ -826,7 +831,7 @@ def main():
             button.draw(screen)
 
         # Draw the current color
-        current_color_button.active_color = current_color_button.inactive_color = current_color
+        current_color_button.active_color = current_color_button.inactive_color = current_color+(alpha,)
         current_color_button.draw(screen)
 
         # Draw the button section texts on the screen
