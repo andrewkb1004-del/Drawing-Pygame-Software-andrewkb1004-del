@@ -1,8 +1,8 @@
 import pygame
+from pygame._sdl2.video import Window
 import os
-import sys
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 
 class Layer:
     """A class for creating a layer in Pygame."""
@@ -241,7 +241,10 @@ def delete_layer(instance):
     layers_list.remove(current_layer)
 
     # Assign previous current_layer to current_layer
-    current_layer = current_layer_history.pop()
+    try:
+        current_layer = current_layer_history.pop()
+    except:
+        current_layer = layers_list[0]
 
 def move_layer_up(instance):
     """Function to move layer up to make it more visible."""
@@ -265,31 +268,42 @@ def set_current_layer(instance):
             break
     #print(f"Current layer is changed to {current_layer.layer_button.text}")
 
-def open_file_dialog():
+def open_file_dialog(filetypes=None):
+    global window
+
     # Create a hidden root window
     root = tk.Tk()
     root.withdraw()
 
     # Open the file dialog
+    if filetypes is None:
+        filetypes = [("TIFF files", "*.tiff"), ("PNG Files", "*.png"), ("All Files", "*.*")]
+
     file_path = filedialog.askopenfilename(
         title="Select a file",
-        filetypes=[("TIFF files", "*.tiff"), ("PNG Files", "*.png"), ("All Files", "*.*")],
+        filetypes=filetypes,
     )
-
+    root.destroy()
+    window.focus()
     return file_path
 
-def save_file_dialog():
+def save_file_dialog(filetypes=None):
+    global window
+
     # Create a hidden root window
     root = tk.Tk()
     root.withdraw()
 
     # Save file dialog
+    if filetypes is None:
+        filetypes = [("TIFF files", "*.tiff"), ("PNG Files", "*.png"), ("All Files", "*.*")]
     file_path = filedialog.asksaveasfilename(
         title="Save file as (Hint: Use TIFF to preserve layers)",
         defaultextension=".tiff",  # Default extension
-        filetypes=[("TIFF files", "*.tiff"), ("PNG Files", "*.png"), ("All Files", "*.*")],
+        filetypes=filetypes,
     )
-
+    root.destroy()
+    window.focus()
     return file_path
 
 def load_file(instance):
@@ -301,13 +315,35 @@ def save_file(instance):
     print(f"File to save is {file_path}")
 
 def import_file(instance):
-    file_path = open_file_dialog()
-    print(f"File to import is {file_path}")
+    global current_layer
+    file_path = open_file_dialog(filetypes=[("PNG Files", "*.png"), ("All Files", "*.*")])
+    #print(f"File to import is {file_path}")
+
+    if file_path != "":
+        if os.access(file_path, os.R_OK):
+            try:
+                image = pygame.image.load(file_path).convert_alpha()
+                current_layer.surface.blit(image, (0,0))
+                return True
+            except:
+                messagebox.showerror(title="Info", message=f"Couldn't import from {file_path}")
+        else:
+            messagebox.showerror(title="Error", message=f"{file_path} is not readable.")
+    return False
 
 def export_file(instance):
-    file_path = save_file_dialog()
-    print(f"File to export is {file_path}")
-        
+    global current_layer
+    file_path = save_file_dialog(filetypes=[("PNG Files", "*.png"), ("All Files", "*.*")])
+    #print(f"File to export is {file_path}")
+
+    if file_path != "":
+        try:
+            pygame.image.save(current_layer.surface, file_path)
+            return True
+        except:
+            messagebox.showerror(title="Error", message=f"Couldn't export to {file_path}.")
+    return False
+
 def set_active_color(instance):
     """Function to set current color."""
     global current_color
@@ -487,14 +523,6 @@ def create_right_buttons(edge_padding, button_padding, button_w, button_h, scree
     button_x = screen_width - edge_padding - button_w
     button_y = 50
 
-    # color_button = Button(
-    #    x=button_x, y=button_y, width=button_w, height=button_h,
-    #    inactive_image=os.path.join("assets", "color_inactive.png"), active_image=os.path.join("assets", "color_active.png"),
-    #    tool="color wheel",
-    #    tooltip_text="Color Wheel",
-    #    action=set_active_tool # Pass the function reference
-    #)
-    
     button_y = button_y + (button_h + button_padding)*8
     save_button = Button(
         x=button_x, y=button_y, width=button_w, height=button_h,
@@ -518,7 +546,7 @@ def create_right_buttons(edge_padding, button_padding, button_w, button_h, scree
         x=button_x, y=button_y, width=button_w, height=button_h,
         inactive_image=os.path.join("assets", "import.png"), active_image=os.path.join("assets", "import.png"),
         tool="import",
-        tooltip_text="Import",
+        tooltip_text="Import image into current layer",
         action=import_file # Pass the function reference
     )
 
@@ -527,7 +555,7 @@ def create_right_buttons(edge_padding, button_padding, button_w, button_h, scree
         x=button_x, y=button_y, width=button_w, height=button_h,
         inactive_image=os.path.join("assets", "export.png"), active_image=os.path.join("assets", "export.png"),
         tool="export",
-        tooltip_text="Export",
+        tooltip_text="Export current layer to image",
         action=export_file # Pass the function reference
     )
 
@@ -539,30 +567,30 @@ def create_layer_buttons(edge_padding, button_padding, button_w, button_h, scree
     button_y = 50
 
     add_button = Button(
-        x=button_x-10, y=button_y, width=button_w*1.5, height=button_h*1.5,
+        x=button_x, y=button_y, width=button_w, height=button_h,
         inactive_image=os.path.join("assets", "add_layer_inactive.png"), active_image=os.path.join("assets", "add_layer_active.png"),
         border_color=BLACK,
         tooltip_text="Add layer",
         action=add_layer
     )
     delete_button = Button(
-        x=button_x+button_w+2, y=button_y, width=button_w*1.5, height=button_h*1.5,
+        x=button_x+button_w, y=button_y, width=button_w, height=button_h,
         inactive_image=os.path.join("assets", "delete_layer_inactive.png"), active_image=os.path.join("assets", "delete_layer_active.png"),
         border_color=BLACK,
         tooltip_text="Remove layer",
         action=delete_layer
     )
 
-    button_y = button_y + (button_h + button_padding)*1.2
+    button_y = button_y + (button_h + button_padding)
     up_button = Button(
-        x=button_x-5, y=button_y, width=button_w*1.3, height=button_h*1.3,
+        x=button_x, y=button_y, width=button_w, height=button_h,
         inactive_image=os.path.join("assets", "up_arrow_inactive.png"), active_image=os.path.join("assets", "up_arrow_active.png"),
         border_color=BLACK,
         tooltip_text="Move layer up",
         action=move_layer_up
     )
     down_button = Button(
-        x=button_x+button_w+2, y=button_y, width=button_w*1.3, height=button_h*1.3,
+        x=button_x+button_w, y=button_y, width=button_w, height=button_h,
         inactive_image=os.path.join("assets", "down_arrow_inactive.png"), active_image=os.path.join("assets", "down_arrow_active.png"),
         border_color=BLACK,
         tooltip_text="Move layer up",
@@ -791,6 +819,9 @@ else:
     resolution = (screen_width, screen_height)
     screen = pygame.display.set_mode(resolution)
 
+# Get the Pygame window object
+window = Window.from_display_module()
+
 line_thickness = 2 # Initial brush size
 alpha = 255
 current_color = BLACK # Default drawing color
@@ -851,7 +882,7 @@ current_layer = layer0
 
 layer_buttons_list = []
 layer_func_buttons_list = []
-create_layer_buttons(edge_padding, button_padding, button_w//2, button_h//2, screen_width, layers_list)
+create_layer_buttons(edge_padding, button_padding, button_w//2*1.3, button_h//2*1.3, screen_width, layers_list)
 
 active_tool = "None"
 running = True
