@@ -3,6 +3,7 @@ from pygame._sdl2.video import Window
 import os
 import tkinter as tk
 from tkinter import filedialog, messagebox
+from PIL import Image
 
 class Layer:
     """A class for creating a layer in Pygame."""
@@ -227,36 +228,39 @@ def delete_layer(instance):
     """Function to delete a layer."""
     global current_layer
 
-    # Remove the current_layer associated buttons from the buttons list
-    layer_buttons_list.remove(current_layer.eye_button)
-    layer_buttons_list.remove(current_layer.layer_button)
+    if len(layers_list) > 1:
+        # Remove the current_layer associated buttons from the buttons list
+        layer_buttons_list.remove(current_layer.eye_button)
+        layer_buttons_list.remove(current_layer.layer_button)
 
-    # Remove all occurences of current_layer from history
-    # Iterate in reverse to avoid skipping elements
-    for i in range(len(current_layer_history) - 1, -1, -1):
-        if current_layer_history[i] == current_layer:
-            del current_layer_history[i]
+        # Remove all occurences of current_layer from history
+        # Iterate in reverse to avoid skipping elements
+        for i in range(len(current_layer_history) - 1, -1, -1):
+            if current_layer_history[i] == current_layer:
+                del current_layer_history[i]
 
-    # Remove current_layer from the layers list
-    layers_list.remove(current_layer)
+        # Remove current_layer from the layers list
+        layers_list.remove(current_layer)
 
-    # Assign previous current_layer to current_layer
-    try:
-        current_layer = current_layer_history.pop()
-    except:
-        current_layer = layers_list[0]
+        # Assign previous current_layer to current_layer
+        try:
+            current_layer = current_layer_history.pop()
+        except:
+            current_layer = layers_list[0]
 
 def move_layer_up(instance):
     """Function to move layer up to make it more visible."""
     global current_layer
-    current_idx = layers_list.index(current_layer)
-    layers_list.insert(current_idx+1, layers_list.pop(current_idx))
+    if len(layers_list) > 1:
+        current_idx = layers_list.index(current_layer)
+        layers_list.insert(current_idx+1, layers_list.pop(current_idx))
 
 def move_layer_down(instance):
     """Function to move layer up to make it more visible."""
     global current_layer
-    current_idx = layers_list.index(current_layer)
-    layers_list.insert(current_idx-1, layers_list.pop(current_idx))
+    if len(layers_list) > 1:
+        current_idx = layers_list.index(current_layer)
+        layers_list.insert(current_idx-1, layers_list.pop(current_idx))
 
 def set_current_layer(instance):
     """ Function to set current layer """
@@ -277,7 +281,7 @@ def open_file_dialog(filetypes=None):
 
     # Open the file dialog
     if filetypes is None:
-        filetypes = [("TIFF files", "*.tiff"), ("PNG Files", "*.png"), ("All Files", "*.*")]
+        filetypes = pygame_supported_filetypes
 
     file_path = filedialog.askopenfilename(
         title="Select a file",
@@ -287,7 +291,7 @@ def open_file_dialog(filetypes=None):
     window.focus()
     return file_path
 
-def save_file_dialog(filetypes=None):
+def save_file_dialog(title="Save file as", filetypes=None):
     global window
 
     # Create a hidden root window
@@ -296,9 +300,9 @@ def save_file_dialog(filetypes=None):
 
     # Save file dialog
     if filetypes is None:
-        filetypes = [("TIFF files", "*.tiff"), ("PNG Files", "*.png"), ("All Files", "*.*")]
+        filetypes = pygame_supported_filetypes
     file_path = filedialog.asksaveasfilename(
-        title="Save file as (Hint: Use TIFF to preserve layers)",
+        title=title,
         defaultextension=".tiff",  # Default extension
         filetypes=filetypes,
     )
@@ -306,17 +310,184 @@ def save_file_dialog(filetypes=None):
     window.focus()
     return file_path
 
+def load_from_multipage_tif(file_path):
+    #print("load from multipage-tiff")
+
+    global layers_list
+    global layer_label_cnt
+    global layer_buttons_list
+    global current_layer_history
+    global current_layer
+
+    layer0 = layers_list[0]
+    layer0_eye_button = layer0.eye_button
+    layer0_x = layer0.x
+    layer0_y = layer0.y
+    layer0_w = layer0.width
+    layer0_h = layer0.height
+    layer0_bg = layer0.bg_color
+    button_x = layer0_eye_button.x
+    button_y = layer0_eye_button.y
+    button_w = layer0_eye_button.width
+    button_h = layer0_eye_button.height
+
+    layers_list = []
+    layer_label_cnt = 1
+    layer_buttons_list = []
+    current_layer_history = []
+
+    # Load the tiff pages into the pil_images array
+    with Image.open(file_path) as img:
+        try:
+            page = 0
+            while True:
+                pil_page = img.convert("RGBA")  # Convert each page to RGBA to preserve alpha if present
+                pil_img = pil_page.copy()
+                size = pil_img.size  # (width, height)
+                raw = pil_img.tobytes("raw", "RGBA")
+                surf = pygame.image.fromstring(raw, size, "RGBA").convert_alpha()  # Create a pygame surface with per-pixel alpha
+                pil_img.close()
+
+                new_layer = Layer(
+                    x=layer0_x,
+                    y=layer0_y,
+                    width=layer0_w,
+                    height=layer0_h,
+                    background_color=layer0_bg
+                )
+                new_layer.surface.blit(surf, (0,0))
+
+                eye_button = Button(
+                    x=button_x, y=button_y, width=button_w, height=button_h,
+                    inactive_image=os.path.join("assets", "layer_hidden.png"), active_image=os.path.join("assets", "layer_shown.png"),
+                    border_color=BLACK,
+                )
+                eye_button.use_active_on_hover = False
+                layer_button = Button(
+                    x=button_x+button_w, y=button_y, width=button_w, height=button_h,
+                    inactive_color=SCREEN_BG, active_color=SILVER,
+                    border_color=BLACK,
+                    text=f"{layer_label_cnt}",
+                    tooltip_text="Set as current layer",
+                    action=set_current_layer
+                )
+                layer_label_cnt += 1
+                button_y += button_h
+
+                if new_layer.is_visible:
+                    eye_button.is_active = True
+                new_layer.eye_button=eye_button
+                new_layer.layer_button=layer_button
+
+                layer_buttons_list.extend([eye_button, layer_button])
+                layers_list.append(new_layer)
+
+                page += 1
+                img.seek(page)  # Move to next page in the tiff file
+        except EOFError:
+            # no more pages
+            pass
+
+        current_layer = layers_list[len(layers_list) - 1]
+
+
 def load_file(instance):
     file_path = open_file_dialog()
-    print(f"File to load is {file_path}")
+    #print(f"File to load is {file_path}")
+
+    global layers_list
+    global layer_buttons_list
+    global current_layer
+    global layer_label_cnt
+    global current_layer_history
+
+    if file_path != "":
+        response = messagebox.askokcancel(title="Confirmation", message="You will loose current progress. Do you want to proceed?")
+        if not response:
+            return False
+
+        if os.access(file_path, os.R_OK):
+            base, ext = os.path.splitext(file_path)
+            if ext.lower() == ".tiff":
+                #print("saving to multipage-tif")
+                load_from_multipage_tif(file_path)
+                return True
+            else:
+                try:
+                    # Load the image into the 1st layer and then remove the other layers
+                    image = pygame.image.load(file_path).convert_alpha()
+                    layers_list[0].clear()
+                    layers_list[0].surface.blit(image, (0,0))
+                    layers_list[0].layer_button.text = "1"
+                    layer_label_cnt = 2  # When we create a new layer, this is the name of it.
+                    current_layer = layers_list[0]
+                    layers_list = [layers_list[0]]  # Keep only the 1st layer.  Remove the rest.
+                    layer_buttons_list = [layers_list[0].eye_button, layers_list[0].layer_button] # Keep only the buttons associated with the 1st layer
+                    current_layer_history = [] # Reset the current_layer history
+                    return True
+                except:
+                    messagebox.showerror(title="Error", message=f"Couldn't load from {file_path}.")
+        else:
+            messagebox.showerror(title="Error", message=f"{file_path} is not readable.")
+    return False
+
+def save_to_multipage_tif(file_path):
+    #print("saving to multipage-tif")
+    pil_images = []
+    for layer in layers_list:
+        size = layer.surface.get_size()
+        has_alpha = layer.surface.get_flags() & pygame.SRCALPHA
+        if has_alpha:
+            # Get raw RGBA bytes from the surface
+            raw_str = pygame.image.tostring(layer.surface, "RGBA", False)
+            pil_img = Image.frombytes("RGBA", size, raw_str)
+        else:
+            # No alpha: get RGB bytes
+            raw_str = pygame.image.tostring(layer.surface, "RGB", False)
+            pil_img = Image.frombytes("RGB", size, raw_str).convert("RGBA")
+        pil_images.append(pil_img)
+
+    first, rest = pil_images[0], pil_images[1:]
+    save_kwargs = {"format": "TIFF", "save_all": True, "append_images": rest}
+    save_kwargs["compression"] = "tiff_deflate"
+
+    first.save(file_path, **save_kwargs)
+    # Close PIL images
+    for im in pil_images:
+        im.close()
+    return True
 
 def save_file(instance):
-    file_path = save_file_dialog()
-    print(f"File to save is {file_path}")
+    file_path = save_file_dialog(title="Save file as (Hint: Save to TIFF to preserve layers)")
+    #print(f"File to save is {file_path}")
+
+    if file_path != "":
+        base, ext = os.path.splitext(file_path)
+        if ext.lower() == ".tiff":
+            save_to_multipage_tif(file_path)
+            return True
+        else:
+            tmp_surface = pygame.Surface((layers_list[0].width, layers_list[0].height), pygame.SRCALPHA)
+            for layer in layers_list:
+                if layer.is_visible:
+                    tmp_surface.blit(layer.surface, (0,0))
+            try:
+                pygame.image.save(tmp_surface, file_path)
+                return True
+            except:
+                messagebox.showerror(title="Error", message=f"Couldn't save to {file_path}")
+    return False
 
 def import_file(instance):
     global current_layer
-    file_path = open_file_dialog(filetypes=[("PNG Files", "*.png"), ("All Files", "*.*")])
+
+    # pygame can't import tiff file that it creates.  Removing it from the supported filetype list.
+    mod_filetypes = []
+    for x in pygame_supported_filetypes:
+        if x != ("TIFF files", "*.tiff"):
+            mod_filetypes.append(x)
+            
+    file_path = open_file_dialog(filetypes=mod_filetypes)
     #print(f"File to import is {file_path}")
 
     if file_path != "":
@@ -326,14 +497,21 @@ def import_file(instance):
                 current_layer.surface.blit(image, (0,0))
                 return True
             except:
-                messagebox.showerror(title="Info", message=f"Couldn't import from {file_path}")
+                messagebox.showerror(title="Error", message=f"Couldn't import from {file_path}")
         else:
             messagebox.showerror(title="Error", message=f"{file_path} is not readable.")
     return False
 
 def export_file(instance):
     global current_layer
-    file_path = save_file_dialog(filetypes=[("PNG Files", "*.png"), ("All Files", "*.*")])
+
+    # pygame can't import tiff file that it creates.  Removing it from the supported filetype list.
+    mod_filetypes = []
+    for x in pygame_supported_filetypes:
+        if x != ("TIFF files", "*.tiff"):
+            mod_filetypes.append(x)
+            
+    file_path = save_file_dialog(filetypes=mod_filetypes)
     #print(f"File to export is {file_path}")
 
     if file_path != "":
@@ -822,6 +1000,8 @@ else:
 # Get the Pygame window object
 window = Window.from_display_module()
 
+pygame_supported_filetypes = [("TIFF files", "*.tiff"), ("BMP files", "*.bmp"), ("GIF files", "*.gif"), ("JPEG files", "*.jpg"), ("PNG Files", "*.png"), ("All Files", "*.*")]
+
 line_thickness = 2 # Initial brush size
 alpha = 255
 current_color = BLACK # Default drawing color
@@ -978,24 +1158,10 @@ while running:
                 else:
                     shape_width = 0
 
-            # Add a layer
-            elif event.key == pygame.K_EQUALS:
-                new_layer = Layer(
-                    x=x_canvas_border_width,
-                    y=0,
-                    width=canvas_width,
-                    height=canvas_height,
-                    background_color=TRANSPARENT_BG
-                )
-                layers_list.append(new_layer)
-                current_layer_history.append(current_layer)
-                current_layer = new_layer
-
-            # Delete current layer
-            elif event.key == pygame.K_MINUS:
-                if len(layers_list) > 1:
-                    layers_list.remove(current_layer)
-                    current_layer = current_layer_history.pop() # Assign previous active layer to current_layer
+            # Cancel drawing operation
+            elif event.key == pygame.K_ESCAPE:
+                start_pos = None
+                tmp_layer.clear()
 
             # Change line thickness
             elif event.key == pygame.K_LEFTBRACKET: # [ key
