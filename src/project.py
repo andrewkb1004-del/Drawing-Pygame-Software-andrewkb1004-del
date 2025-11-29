@@ -23,13 +23,16 @@ class Layer:
         self.y = y
         self.width = width
         self.height = height
-        self.bg_color = background_color
+        if len(background_color) == 4:
+            self.bg_color = background_color
+        else: 
+            self.bg_color = background_color+(0,)
         self.is_visible = True
         self.is_current = True
         self.rect = pygame.Rect(x, y, width, height)
         self.surface = pygame.Surface((width, height), pygame.SRCALPHA)
-        self.surface.set_colorkey(background_color)
-        self.surface.fill(background_color)
+        self.surface.set_colorkey(self.bg_color)
+        self.surface.fill(self.bg_color)
         self.eye_button = None
         self.layer_button = None
 
@@ -173,7 +176,7 @@ def set_active_tool(instance):
     global start_pos
 
     start_pos = None
-    if instance.is_active and instance.tool in ["pen", "eraser", "square", "rect", "circle", "oval", "triangle"]:
+    if instance.is_active and instance.tool in ["pen", "eraser", "square", "rect", "circle", "oval", "triangle", "eyedropper"]:
         active_tool = instance.tool
     else:
         active_tool = "None"
@@ -639,7 +642,16 @@ def create_left_buttons(edge_padding, button_padding, button_w, button_h):
         tooltip_text="Eraser",
         action=set_active_tool # Pass the function reference
     )
-    
+
+    button_y = button_y + button_h + button_padding    
+    eyedropper_button = Button(
+        x=button_x, y=button_y, width=button_w, height=button_h,
+        inactive_image=os.path.join("assets", "eyedropper_inactive.png"), active_image=os.path.join("assets", "eyedropper_active.png"),
+        tool="eyedropper",
+        tooltip_text="Color Picker",
+        action=set_active_tool
+    )
+
     button_y = button_y + (button_h + button_padding)*2
     square_button = Button(
         x=button_x, y=button_y, width=button_w, height=button_h,
@@ -685,7 +697,7 @@ def create_left_buttons(edge_padding, button_padding, button_w, button_h):
         action=set_active_tool # Pass the function reference
     )
 
-    button_y = button_y + (button_h + button_padding)*5
+    button_y = button_y + (button_h + button_padding)*4
     quit_button = Button(
         x=button_x, y=button_y, width=button_w, height=button_h,
         inactive_image=os.path.join("assets", "quit_inactive.png"), active_image=os.path.join("assets", "quit_active.png"),
@@ -694,7 +706,7 @@ def create_left_buttons(edge_padding, button_padding, button_w, button_h):
         action=quit_program # Pass the function reference
     )
 
-    tool_buttons_list.extend([pen_button, eraser_button, square_button, rect_button, circle_button, oval_button, triangle_button, quit_button])    
+    tool_buttons_list.extend([pen_button, eraser_button, eyedropper_button, square_button, rect_button, circle_button, oval_button, triangle_button, quit_button])    
 
 def create_right_buttons(edge_padding, button_padding, button_w, button_h, screen_width):
     # --- Create right side buttons ---
@@ -981,7 +993,7 @@ AQUA = (0, 148, 148)
 CANVAS_BG = WHITE
 SCREEN_BG = GRAY
 TOOLTIP_BG = (255, 255, 200)
-TRANSPARENT_BG = (255, 254, 253)
+TRANSPARENT_BG = (255, 255, 255)
 
 pygame.init()
 pygame.display.set_caption("Drawing Pygame Software")
@@ -1104,6 +1116,17 @@ while running:
                             current_pos = (event.pos[0] - x_canvas_border_width, event.pos[1])
                             draw_shape(active_tool, current_layer.surface, draw_color+(alpha,), start_pos, current_pos, shape_width)
                             start_pos = None
+                    elif active_tool == "eyedropper":
+                        current_pos = (event.pos[0] - x_canvas_border_width, event.pos[1])
+                        for layer in reversed(layers_list):
+                            if layer.is_visible:
+                                color = layer.surface.get_at(current_pos)
+                                if color != (0,0,0,0):
+                                    break
+                        if color != (0,0,0,0):
+                            current_color = (color.r, color.g, color.b)
+                            alpha = color.a
+                            #print(f"eyedropper at {current_pos}: {color} on layer {layer.layer_button.text}")
 
         # Mouse Button Up Event
         if event.type == pygame.MOUSEBUTTONUP:
@@ -1199,8 +1222,7 @@ while running:
     tmp_layer.draw(screen)
 
     x, y, w, h = layer_button_start_info
-    for i in range(len(layers_list) - 1, -1, -1):
-        layer = layers_list[i]
+    for layer in reversed(layers_list):
         # Set the buttons position according to the layer order in layers_list.  Do this in reverse order so that we start with the buttons for last drawn layer 
         layer.eye_button.x = x
         layer.eye_button.y = y
@@ -1239,7 +1261,7 @@ while running:
     font = pygame.font.SysFont('Arial', 18, bold=True)
     # Left side
     screen.blit(font.render("Tools"  , True, BLACK), (edge_padding, 50-25))
-    screen.blit(font.render("Shapes" , True, BLACK), (edge_padding, 50-25+(button_h+button_padding)*3))
+    screen.blit(font.render("Shapes" , True, BLACK), (edge_padding, 50-25+(button_h+button_padding)*4))
     screen.blit(font.render("Exit" , True, BLACK), (edge_padding, 50-25+(button_h+button_padding)*11.9))
     # Right side
     screen.blit(font.render("Layers" , True, BLACK), (screen_width - edge_padding - button_w, 50-25))
