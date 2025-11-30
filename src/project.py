@@ -182,6 +182,16 @@ def set_active_tool(instance):
         active_tool = "None"
     #print(f"Set {active_tool} as active!")
 
+def set_active_color_button(instance):
+    """Function to set current active tool."""
+    global active_color_button
+
+    if instance.is_active and instance.tool in ["pen_color", "fill_color"]:
+        active_color_button = instance.tool
+    else:
+        active_color_button = "pen_color"
+    #print(f"Set {active_color_button} as active!")
+
 def add_layer(instance):
     """Function to add a layer."""
     global current_layer
@@ -527,9 +537,13 @@ def export_file(instance):
 
 def set_active_color(instance):
     """Function to set current color."""
-    global current_color
-    current_color = instance.active_color
-    #print(f"Set {instance.tooltip} as active color!")
+    global current_pen_color
+    global current_fill_color
+    global active_color_button
+    if active_color_button == "pen_color":
+        current_pen_color = instance.active_color
+    elif active_color_button == "fill_color":
+        current_fill_color = instance.active_color
 
 def decrease_lw(instance):
     global line_thickness
@@ -824,7 +838,7 @@ def create_layer_buttons(edge_padding, button_padding, button_w, button_h, scree
 
 def create_color_buttons(x_edge_padding, y_edge_padding, button_padding, button_w, button_h, screen_height):
     # --- Create color buttons at the bottom side ---
-    button_x = x_edge_padding + 35 + x_edge_padding + (button_w + button_padding)*2
+    button_x = x_edge_padding + 85 + x_edge_padding + (button_w + button_padding)*2
     button_y = screen_height - button_h - y_edge_padding
 
     colors = {
@@ -868,7 +882,7 @@ def create_color_buttons(x_edge_padding, y_edge_padding, button_padding, button_
     
 def create_lw_a_buttons(x_edge_padding, y_edge_padding, button_padding, button_w, button_h, screen_width, screen_height, lw, alpha):
     # --- Create the line_width and alpha buttons at the bottom right corner---
-    button_x = screen_width - x_edge_padding - (button_w + button_padding)*14
+    button_x = screen_width - x_edge_padding - (button_w + button_padding)*12
     button_y = screen_height - button_h - y_edge_padding
 
     lw_label_button = Button(
@@ -943,20 +957,31 @@ def create_lw_a_buttons(x_edge_padding, y_edge_padding, button_padding, button_w
                               alpha_label_button, alpha_minus_button, alpha_value_button, alpha_plus_button])
 
 
-def draw_shape(active_tool, layer, draw_color, start_pos, current_pos, shape_width):
-    tmp_surface = pygame.Surface((layer.get_width(), layer.get_height()), pygame.SRCALPHA)
+def draw_shape(active_tool, surface, pen_color, fill_color, start_pos, current_pos, shape_width):
+    global line_thickness
+    tmp_surface = pygame.Surface((surface.get_width(), surface.get_height()), pygame.SRCALPHA)
     if active_tool == "square":
-        pygame.draw.rect(tmp_surface, draw_color, get_square(start_pos, current_pos), shape_width)
+        pygame.draw.rect(tmp_surface, fill_color, get_square(start_pos, current_pos), shape_width)
+        if pen_color != fill_color:
+            pygame.draw.rect(tmp_surface, pen_color, get_square(start_pos, current_pos), line_thickness)
     elif active_tool == "rect":
-        pygame.draw.rect(tmp_surface, draw_color, get_rect(start_pos, current_pos), shape_width)
+        pygame.draw.rect(tmp_surface, fill_color, get_rect(start_pos, current_pos), shape_width)
+        if pen_color != fill_color:
+            pygame.draw.rect(tmp_surface, pen_color, get_rect(start_pos, current_pos), line_thickness)
     elif active_tool == "circle":
         x, y , radius = get_circle(start_pos, current_pos)
-        pygame.draw.circle(tmp_surface, draw_color, (x, y), radius, shape_width)
+        pygame.draw.circle(tmp_surface, fill_color, (x, y), radius, shape_width)
+        if pen_color != fill_color:
+            pygame.draw.circle(tmp_surface, pen_color, (x, y), radius, line_thickness)
     elif active_tool == "oval":
-        pygame.draw.ellipse(tmp_surface, draw_color, get_rect(start_pos, current_pos), shape_width)
+        pygame.draw.ellipse(tmp_surface, fill_color, get_rect(start_pos, current_pos), shape_width)
+        if pen_color != fill_color:
+            pygame.draw.ellipse(tmp_surface, pen_color, get_rect(start_pos, current_pos), line_thickness)
     elif active_tool == "triangle":
-        pygame.draw.polygon(tmp_surface, draw_color, get_triangle(start_pos, current_pos), shape_width)
-    layer.blit(tmp_surface, (0, 0))
+        pygame.draw.polygon(tmp_surface, fill_color, get_triangle(start_pos, current_pos), shape_width)
+        if pen_color != fill_color:
+            pygame.draw.polygon(tmp_surface, pen_color, get_triangle(start_pos, current_pos), line_thickness)
+    surface.blit(tmp_surface, (0, 0))
 
 def is_pos_in_canvas(pos, canvas_rect):
     if canvas_rect.collidepoint(pos):
@@ -1016,7 +1041,8 @@ pygame_supported_filetypes = [("TIFF files", "*.tiff"), ("BMP files", "*.bmp"), 
 
 line_thickness = 2 # Initial brush size
 alpha = 255
-current_color = BLACK # Default drawing color
+current_pen_color = BLACK # Default pen and peripheral color
+current_fill_color = BLACK # Default fill color
 fps = 60
 edge_padding = 15
 button_padding = 10
@@ -1035,13 +1061,23 @@ color_button_w = 30
 color_button_h = 30
 create_color_buttons(edge_padding, edge_padding, button_padding, color_button_w, color_button_h, screen_height)
 
-current_color_button = Button(
+current_pen_color_button = Button(
     x=x_canvas_border_width, y=screen_height - color_button_h - edge_padding, width=color_button_w*1.5, height=color_button_h,
-    inactive_color=current_color, active_color=current_color,
+    inactive_color=current_pen_color, active_color=current_pen_color,
     border_color=BLACK,
-    tool="color",
-    tooltip_text="Current Color",
+    tool="pen_color",
+    tooltip_text="Current Pen Color",
+    action=set_active_color_button
 )
+current_fill_color_button = Button(
+    x=x_canvas_border_width+color_button_w*1.5+button_padding, y=screen_height - color_button_h - edge_padding, width=color_button_w*1.5, height=color_button_h,
+    inactive_color=current_fill_color, active_color=current_fill_color,
+    border_color=BLACK,
+    tool="fill_color",
+    tooltip_text="Current Fill Color",
+    action=set_active_color_button
+)
+current_color_buttons_list = [current_pen_color_button, current_fill_color_button]
 
 lw_a_buttons_list = []
 create_lw_a_buttons(edge_padding, edge_padding, 0, color_button_w, color_button_h, screen_width, screen_height, line_thickness, alpha)
@@ -1077,6 +1113,7 @@ layer_func_buttons_list = []
 create_layer_buttons(edge_padding, button_padding, button_w//2*1.3, button_h//2*1.3, screen_width, layers_list)
 
 active_tool = "None"
+active_color_button = "pen_color"
 running = True
 start_pos = None # Use for square, rect, circle, oval, and triangle
 mouse_button_down = False # Flag to check if the mouse button is held down
@@ -1091,9 +1128,14 @@ while running:
     screen.fill(SCREEN_BG)                            # Fill the entire screen with SCREEN_BG color (e.g. gray)
     pygame.draw.rect(screen, CANVAS_BG, canvas_rect)  # Fill just the canvas area with CANVAS_BG color (e.g. white)
     if active_tool == "eraser":
-        draw_color = eraser_color
+        fill_color = eraser_color
+        pen_color = eraser_color
     else:
-        draw_color = current_color
+        fill_color = current_fill_color
+        pen_color = current_pen_color
+
+    if active_color_button not in ["pen_color", "fill_color"]:
+        active_color_button = "pen_color"
 
     # Event Loop
     for event in pygame.event.get():
@@ -1114,7 +1156,7 @@ while running:
                         else:
                             tmp_layer.clear()
                             current_pos = (event.pos[0] - x_canvas_border_width, event.pos[1])
-                            draw_shape(active_tool, current_layer.surface, draw_color+(alpha,), start_pos, current_pos, shape_width)
+                            draw_shape(active_tool, current_layer.surface, pen_color+(alpha,), fill_color+(alpha,), start_pos, current_pos, shape_width)
                             start_pos = None
                     elif active_tool == "eyedropper":
                         current_pos = (event.pos[0] - x_canvas_border_width, event.pos[1])
@@ -1124,7 +1166,10 @@ while running:
                                 if color != (0,0,0,0):
                                     break
                         if color != (0,0,0,0):
-                            current_color = (color.r, color.g, color.b)
+                            if active_color_button == "pen_color":
+                                current_pen_color = (color.r, color.g, color.b)
+                            else:
+                                current_fill_color = (color.r, color.g, color.b)
                             alpha = color.a
                             #print(f"eyedropper at {current_pos}: {color} on layer {layer.layer_button.text}")
 
@@ -1138,7 +1183,7 @@ while running:
                 current_pos = (event.pos[0] - x_canvas_border_width, event.pos[1])
                 if active_tool in ["square", "rect", "circle", "oval", "triangle"] and start_pos is not None and current_pos != start_pos:
                     tmp_layer.clear()
-                    draw_shape(active_tool, current_layer.surface, draw_color+(alpha,), start_pos, current_pos, shape_width)
+                    draw_shape(active_tool, current_layer.surface, pen_color+(alpha,), fill_color+(alpha,), start_pos, current_pos, shape_width)
                     start_pos = None
 
         # Mouse Motion Event
@@ -1151,7 +1196,7 @@ while running:
                             # Draw a line from the last position to the current position
                             # This makes the drawing smooth rather than just dots
                             tmp_surface = pygame.Surface((current_layer.surface.get_width(), current_layer.surface.get_height()), pygame.SRCALPHA)
-                            pygame.draw.line(tmp_surface, draw_color+(alpha,), last_pos, current_pos, line_thickness)
+                            pygame.draw.line(tmp_surface, pen_color+(alpha,), last_pos, current_pos, line_thickness)
                             current_layer.surface.blit(tmp_surface, (0, 0))
                         last_pos = current_pos # Update last_pos for the next segment
             
@@ -1160,13 +1205,17 @@ while running:
                 tmp_layer.clear()
                 tmp_layer.surface.blit(current_layer.surface, (0,0))
                 current_pos = (event.pos[0] - x_canvas_border_width, event.pos[1])
-                if draw_color != eraser_color:
-                    tmp_draw_color = draw_color
+                if fill_color != eraser_color:
+                    tmp_fill_color = fill_color
                     tmp_shape_width = shape_width
                 else:
-                    tmp_draw_color = BLACK
+                    tmp_fill_color = BLACK
                     tmp_shape_width = 1
-                draw_shape(active_tool, tmp_layer.surface, tmp_draw_color+(alpha,), start_pos, current_pos, tmp_shape_width)
+                if pen_color != eraser_color:
+                    tmp_pen_color = pen_color
+                else:
+                    tmp_pen_color = BLACK
+                draw_shape(active_tool, tmp_layer.surface, tmp_pen_color+(alpha,), tmp_fill_color+(alpha,), start_pos, current_pos, tmp_shape_width)
 
         # Keyboard Events
         if event.type == pygame.KEYDOWN:
@@ -1197,7 +1246,7 @@ while running:
                     shape_width = line_thickness
 
         # Handling event for the buttons
-        for button in tool_buttons_list + misc_buttons_list + layer_buttons_list + layer_func_buttons_list + color_buttons_list + lw_a_buttons_list:
+        for button in tool_buttons_list + misc_buttons_list + layer_buttons_list + layer_func_buttons_list + color_buttons_list + lw_a_buttons_list + current_color_buttons_list:
             button.handle_event(event)
 
     # Draw layers
@@ -1254,8 +1303,18 @@ while running:
         button.draw(screen)
 
     # Draw the current color
-    current_color_button.active_color = current_color_button.inactive_color = current_color+(alpha,)
-    current_color_button.draw(screen)
+    current_pen_color_button.active_color = current_pen_color_button.inactive_color = current_pen_color
+    current_pen_color_button.draw(screen)
+    current_pen_color_button.is_active = False
+
+    current_fill_color_button.active_color = current_fill_color_button.inactive_color = current_fill_color
+    current_fill_color_button.draw(screen)
+    current_fill_color_button.is_active = False
+
+    if active_color_button == "pen_color":
+        pygame.draw.rect(screen, ORANGE, current_pen_color_button.rect.inflate(5,5), 2)
+    else:
+        pygame.draw.rect(screen, ORANGE, current_fill_color_button.rect.inflate(5,5), 2)
 
     # Draw the button section texts on the screen
     font = pygame.font.SysFont('Arial', 18, bold=True)
@@ -1275,9 +1334,8 @@ while running:
     screen.blit(mouse_coor_surface, (15, screen_height-15))
 
     # Draw button tooltip on the screen
-    for button in tool_buttons_list + misc_buttons_list + layer_buttons_list + layer_func_buttons_list + color_buttons_list + lw_a_buttons_list:
+    for button in tool_buttons_list + misc_buttons_list + layer_buttons_list + layer_func_buttons_list + color_buttons_list + lw_a_buttons_list + current_color_buttons_list:
         button.draw_tooltip(screen)        
-    current_color_button.draw_tooltip(screen)
 
     # --- Update the Display ---
     pygame.display.flip()
