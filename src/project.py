@@ -1123,6 +1123,9 @@ start_pos = None # Use for square, rect, circle, oval, and triangle
 shape_width = 0  # Set to 0 to have the shape filled. Set to non-zero to specify the line width of the shape edges
 eraser_color = TRANSPARENT_BG
 current_layer_history = []
+undo_history = []
+redo_history = []
+max_undo_number = 10  # Maximum number of undo/redo allowed
 
 while running:
     screen.fill(SCREEN_BG)                            # Fill the entire screen with SCREEN_BG color (e.g. gray)
@@ -1156,7 +1159,12 @@ while running:
                         else:
                             tmp_layer.clear()
                             current_pos = (event.pos[0] - x_canvas_border_width, event.pos[1])
+                            undo_surface = pygame.Surface.copy(current_layer.surface)   # Create a copy of the current surface and put it into the undo history
+                            undo_history.append([current_layer, undo_surface])
+                            if len(undo_history) > max_undo_number:
+                                undo_history = undo_history[-max_undo_number:]
                             draw_shape(active_tool, current_layer.surface, pen_color+(alpha,), fill_color+(alpha,), start_pos, current_pos, shape_width)
+                            redo_history = []
                             start_pos = None
                     elif active_tool == "eyedropper":
                         current_pos = (event.pos[0] - x_canvas_border_width, event.pos[1])
@@ -1172,6 +1180,12 @@ while running:
                                 current_fill_color = (color.r, color.g, color.b)
                             alpha = color.a
                             #print(f"eyedropper at {current_pos}: {color} on layer {layer.layer_button.text}")
+                    elif active_tool in ["pen", "eraser"]:
+                        undo_surface = pygame.Surface.copy(current_layer.surface)   # Create a copy of the current surface and put it into the undo history
+                        undo_history.append([current_layer, undo_surface])
+                        if len(undo_history) > max_undo_number:
+                            undo_history = undo_history[-max_undo_number:]
+                        redo_history = []
 
         # Mouse Button Up Event
         if event.type == pygame.MOUSEBUTTONUP:
@@ -1183,7 +1197,12 @@ while running:
                 current_pos = (event.pos[0] - x_canvas_border_width, event.pos[1])
                 if active_tool in ["square", "rect", "circle", "oval", "triangle"] and start_pos is not None and current_pos != start_pos:
                     tmp_layer.clear()
+                    undo_surface = pygame.Surface.copy(current_layer.surface)   # Create a copy of the current surface and put it into the undo history
+                    undo_history.append([current_layer, undo_surface])
+                    if len(undo_history) > max_undo_number:
+                        undo_history = undo_history[-max_undo_number:]
                     draw_shape(active_tool, current_layer.surface, pen_color+(alpha,), fill_color+(alpha,), start_pos, current_pos, shape_width)
+                    redo_history = []
                     start_pos = None
 
         # Mouse Motion Event
@@ -1221,7 +1240,12 @@ while running:
         if event.type == pygame.KEYDOWN:
             # Clear Screen
             if event.key == pygame.K_c:
+                undo_surface = pygame.Surface.copy(current_layer.surface)   # Create a copy of the current surface and put it into the undo history
+                undo_history.append([current_layer, undo_surface])
+                if len(undo_history) > max_undo_number:
+                    undo_history = undo_history[-max_undo_number:]
                 current_layer.clear()
+                redo_history = []
 
             # Toggle shape fill
             elif event.key == pygame.K_f:
@@ -1244,6 +1268,28 @@ while running:
                 line_thickness = min(50, line_thickness + 1) # Increase, max 50
                 if shape_width != 0:
                     shape_width = line_thickness
+
+            # Undo an edit using Ctrl+z
+            elif event.key == pygame.K_z and (event.mod & pygame.KMOD_CTRL):
+                if len(undo_history) > 0:
+                    undo_layer, undo_surface = undo_history.pop()
+
+                    # Before doing the undo, we need to populate the redo history by creating a copy of the surface that will be undone and put it into the redo history
+                    redo_surface = pygame.Surface.copy(undo_layer.surface)
+                    redo_history.append([undo_layer, redo_surface])
+
+                    undo_layer.surface = undo_surface # Do the undo function
+
+            # Redo an edit using Ctrl+y
+            elif event.key == pygame.K_y and (event.mod & pygame.KMOD_CTRL):
+                if len(redo_history) > 0:
+                    redo_layer, redo_surface = redo_history.pop()
+
+                    # Before doing the redo, we need to populate the undo history by creating a copy of the surface that will be redone and put it into the undo history
+                    undo_surface = pygame.Surface.copy(redo_layer.surface)
+                    undo_history.append([redo_layer, undo_surface])
+
+                    redo_layer.surface = redo_surface # Do the redo function
 
         # Handling event for the buttons
         for button in tool_buttons_list + misc_buttons_list + layer_buttons_list + layer_func_buttons_list + color_buttons_list + lw_a_buttons_list + current_color_buttons_list:
