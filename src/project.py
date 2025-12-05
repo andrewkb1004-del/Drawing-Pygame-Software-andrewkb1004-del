@@ -135,7 +135,6 @@ class Button:
                 text_surface = self.font.render(self.tooltip, True, BLACK)
                 padding = 5
                 box_rect = text_surface.get_rect()
-                #box_rect.topleft = (mouse_pos[0] + 20, mouse_pos[1] - 20)  # Offset from cursor
                 box_rect.topright = (mouse_pos[0] + 20, mouse_pos[1] - 20)  # Offset from cursor
                 box_rect.inflate_ip(padding * 2, padding * 2)
 
@@ -168,7 +167,6 @@ def quit_program(instance):
     """Function to exit the program."""
     global running
     running = False
-    #print("Exiting ...")
 
 def set_active_tool(instance):
     """Function to set current active tool."""
@@ -180,7 +178,6 @@ def set_active_tool(instance):
         active_tool = instance.tool
     else:
         active_tool = "None"
-    #print(f"Set {active_tool} as active!")
 
 def set_active_color_button(instance):
     """Function to set current active tool."""
@@ -190,7 +187,6 @@ def set_active_color_button(instance):
         active_color_button = instance.tool
     else:
         active_color_button = "pen_color"
-    #print(f"Set {active_color_button} as active!")
 
 def add_layer(instance):
     """Function to add a layer."""
@@ -278,12 +274,10 @@ def move_layer_down(instance):
 def set_current_layer(instance):
     """ Function to set current layer """
     global current_layer
-    #print(f"Current layer is {current_layer.layer_button.text}")
     for layer in layers_list:
         if layer.layer_button == instance:
             current_layer = layer
             break
-    #print(f"Current layer is changed to {current_layer.layer_button.text}")
 
 def open_file_dialog(filetypes=None):
     global window
@@ -324,8 +318,6 @@ def save_file_dialog(title="Save file as", filetypes=None):
     return file_path
 
 def load_from_multipage_tif(file_path):
-    #print("load from multipage-tiff")
-
     global layers_list
     global layer_label_cnt
     global layer_buttons_list
@@ -406,7 +398,6 @@ def load_from_multipage_tif(file_path):
 
 def load_file(instance):
     file_path = open_file_dialog()
-    #print(f"File to load is {file_path}")
 
     global layers_list
     global layer_buttons_list
@@ -422,7 +413,6 @@ def load_file(instance):
         if os.access(file_path, os.R_OK):
             base, ext = os.path.splitext(file_path)
             if ext.lower() == ".tiff":
-                #print("saving to multipage-tif")
                 load_from_multipage_tif(file_path)
                 return True
             else:
@@ -445,7 +435,6 @@ def load_file(instance):
     return False
 
 def save_to_multipage_tif(file_path):
-    #print("saving to multipage-tif")
     pil_images = []
     for layer in layers_list:
         size = layer.surface.get_size()
@@ -472,7 +461,6 @@ def save_to_multipage_tif(file_path):
 
 def save_file(instance):
     file_path = save_file_dialog(title="Save file as (Hint: Save to TIFF to preserve layers)")
-    #print(f"File to save is {file_path}")
 
     if file_path != "":
         base, ext = os.path.splitext(file_path)
@@ -501,7 +489,6 @@ def import_file(instance):
             mod_filetypes.append(x)
             
     file_path = open_file_dialog(filetypes=mod_filetypes)
-    #print(f"File to import is {file_path}")
 
     if file_path != "":
         if os.access(file_path, os.R_OK):
@@ -525,7 +512,6 @@ def export_file(instance):
             mod_filetypes.append(x)
             
     file_path = save_file_dialog(filetypes=mod_filetypes)
-    #print(f"File to export is {file_path}")
 
     if file_path != "":
         try:
@@ -645,7 +631,7 @@ def create_left_buttons(edge_padding, button_padding, button_w, button_h):
         inactive_image=os.path.join("assets", "pen_inactive.png"), active_image=os.path.join("assets", "pen_active.png"),
         tool="pen",
         tooltip_text="Pen",
-        action=set_active_tool # Pass the function reference
+        action=set_active_tool # Passes the function reference
     )
 
     button_y = button_y + button_h + button_padding
@@ -654,7 +640,7 @@ def create_left_buttons(edge_padding, button_padding, button_w, button_h):
         inactive_image=os.path.join("assets", "eraser_inactive.png"), active_image=os.path.join("assets", "eraser_active.png"),
         tool="eraser",
         tooltip_text="Eraser",
-        action=set_active_tool # Pass the function reference
+        action=set_active_tool
     )
 
     button_y = button_y + button_h + button_padding    
@@ -672,7 +658,7 @@ def create_left_buttons(edge_padding, button_padding, button_w, button_h):
         inactive_image=os.path.join("assets", "square_inactive.png"), active_image=os.path.join("assets", "square_active.png"),
         tool="square",
         tooltip_text="Square",
-        action=set_active_tool # Pass the function reference
+        action=set_active_tool
     )
 
     button_y = button_y + button_h + button_padding
@@ -681,7 +667,7 @@ def create_left_buttons(edge_padding, button_padding, button_w, button_h):
         inactive_image=os.path.join("assets", "rect_inactive.png"), active_image=os.path.join("assets", "rect_active.png"),
         tool="rect",
         tooltip_text="Rectangle",
-        action=set_active_tool # Pass the function reference
+        action=set_active_tool
     )
     
     button_y = button_y + button_h + button_padding
@@ -690,7 +676,7 @@ def create_left_buttons(edge_padding, button_padding, button_w, button_h):
         inactive_image=os.path.join("assets", "circle_inactive.png"), active_image=os.path.join("assets", "circle_active.png"),
         tool="circle",
         tooltip_text="Circle",
-        action=set_active_tool # Pass the function reference
+        action=set_active_tool
     )
 
     button_y = button_y + button_h + button_padding
@@ -699,7 +685,7 @@ def create_left_buttons(edge_padding, button_padding, button_w, button_h):
         inactive_image=os.path.join("assets", "oval_inactive.png"), active_image=os.path.join("assets", "oval_active.png"),
         tool="oval",
         tooltip_text="Oval",
-        action=set_active_tool # Pass the function reference
+        action=set_active_tool
     )
 
     button_y = button_y + button_h + button_padding
@@ -708,7 +694,7 @@ def create_left_buttons(edge_padding, button_padding, button_w, button_h):
         inactive_image=os.path.join("assets", "triangle_inactive.png"), active_image=os.path.join("assets", "triangle_active.png"),
         tool="triangle",
         tooltip_text="Triangle",
-        action=set_active_tool # Pass the function reference
+        action=set_active_tool
     )
 
     button_y = button_y + (button_h + button_padding)*4
@@ -717,7 +703,7 @@ def create_left_buttons(edge_padding, button_padding, button_w, button_h):
         inactive_image=os.path.join("assets", "quit_inactive.png"), active_image=os.path.join("assets", "quit_active.png"),
         tool="quit",
         tooltip_text="Quit Program",
-        action=quit_program # Pass the function reference
+        action=quit_program
     )
 
     tool_buttons_list.extend([pen_button, eraser_button, eyedropper_button, square_button, rect_button, circle_button, oval_button, triangle_button, quit_button])    
@@ -733,7 +719,7 @@ def create_right_buttons(edge_padding, button_padding, button_w, button_h, scree
         inactive_image=os.path.join("assets", "save.png"), active_image=os.path.join("assets", "save.png"),
         tool="save",
         tooltip_text="Save",
-        action=save_file # Pass the function reference
+        action=save_file # Passes the function reference
     )
     
     button_y = button_y + button_h + button_padding
@@ -742,7 +728,7 @@ def create_right_buttons(edge_padding, button_padding, button_w, button_h, scree
         inactive_image=os.path.join("assets", "load.png"), active_image=os.path.join("assets", "load.png"),
         tool="load",
         tooltip_text="Load",
-        action=load_file # Pass the function reference
+        action=load_file
     )
 
     button_y = button_y + button_h + button_padding
@@ -751,7 +737,7 @@ def create_right_buttons(edge_padding, button_padding, button_w, button_h, scree
         inactive_image=os.path.join("assets", "import.png"), active_image=os.path.join("assets", "import.png"),
         tool="import",
         tooltip_text="Import image into current layer",
-        action=import_file # Pass the function reference
+        action=import_file
     )
 
     button_y = button_y + button_h + button_padding
@@ -760,7 +746,7 @@ def create_right_buttons(edge_padding, button_padding, button_w, button_h, scree
         inactive_image=os.path.join("assets", "export.png"), active_image=os.path.join("assets", "export.png"),
         tool="export",
         tooltip_text="Export current layer to image",
-        action=export_file # Pass the function reference
+        action=export_file
     )
 
     misc_buttons_list.extend([save_button, load_button, import_button, export_button])
@@ -1125,7 +1111,7 @@ eraser_color = TRANSPARENT_BG
 current_layer_history = []
 undo_history = []
 redo_history = []
-max_undo_number = 10  # Maximum number of undo/redo allowed
+max_undo_number = 50  # Maximum number of undo/redo allowed
 
 while running:
     screen.fill(SCREEN_BG)                            # Fill the entire screen with SCREEN_BG color (e.g. gray)
@@ -1179,7 +1165,6 @@ while running:
                             else:
                                 current_fill_color = (color.r, color.g, color.b)
                             alpha = color.a
-                            #print(f"eyedropper at {current_pos}: {color} on layer {layer.layer_button.text}")
                     elif active_tool in ["pen", "eraser"]:
                         undo_surface = pygame.Surface.copy(current_layer.surface)   # Create a copy of the current surface and put it into the undo history
                         undo_history.append([current_layer, undo_surface])
@@ -1258,16 +1243,6 @@ while running:
             elif event.key == pygame.K_ESCAPE:
                 start_pos = None
                 tmp_layer.clear()
-
-            # Change line thickness
-            elif event.key == pygame.K_LEFTBRACKET: # [ key
-                line_thickness = max(1, line_thickness - 1) # Decrease, min 1
-                if shape_width != 0:
-                    shape_width = line_thickness
-            elif event.key == pygame.K_RIGHTBRACKET: # ] key
-                line_thickness = min(50, line_thickness + 1) # Increase, max 50
-                if shape_width != 0:
-                    shape_width = line_thickness
 
             # Undo an edit using Ctrl+z
             elif event.key == pygame.K_z and (event.mod & pygame.KMOD_CTRL):
@@ -1387,6 +1362,6 @@ while running:
     pygame.display.flip()
 
     # --- Frame Rate Control ---
-    clock.tick(fps) # Limit frames per second to fps
+    clock.tick(fps)
 
 pygame.quit()

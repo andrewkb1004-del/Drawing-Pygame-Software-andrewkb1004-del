@@ -1,6 +1,8 @@
 pygame
 pillow
+window
 os
-sys
 tkinter
 filedialog
+messagebox
+Image
