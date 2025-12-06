@@ -437,15 +437,18 @@ def load_file(instance):
 def save_to_multipage_tif(file_path):
     pil_images = []
     for layer in layers_list:
-        size = layer.surface.get_size()
-        has_alpha = layer.surface.get_flags() & pygame.SRCALPHA
+        # TIFF doesn’t automatically interpret colorkey as transparency, so we'll get black background.
+        # Use convert_alpha to force the surface to have an alpha channel, so colorkey pixels become transparent instead of black.
+        tmp_surface = layer.surface.convert_alpha()
+        size = tmp_surface.get_size()
+        has_alpha = tmp_surface.get_flags() & pygame.SRCALPHA
         if has_alpha:
             # Get raw RGBA bytes from the surface
-            raw_str = pygame.image.tostring(layer.surface, "RGBA", False)
+            raw_str = pygame.image.tostring(tmp_surface, "RGBA", False)
             pil_img = Image.frombytes("RGBA", size, raw_str)
         else:
             # No alpha: get RGB bytes
-            raw_str = pygame.image.tostring(layer.surface, "RGB", False)
+            raw_str = pygame.image.tostring(tmp_surface, "RGB", False)
             pil_img = Image.frombytes("RGB", size, raw_str).convert("RGBA")
         pil_images.append(pil_img)
 
@@ -1362,6 +1365,6 @@ while running:
     pygame.display.flip()
 
     # --- Frame Rate Control ---
-    clock.tick(fps)
+    clock.tick(fps) # Limit frames per second to fps
 
 pygame.quit()
