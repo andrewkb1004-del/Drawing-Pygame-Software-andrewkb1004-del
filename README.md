@@ -1,7 +1,7 @@
 # Drawing Pygame Software
 
 ## Demo
-Demo Video: <URL>
+Demo Video: <https://drive.google.com/file/d/1tpsiU1mm2mF47JiFiFJhtmHMOfpdEtal/view?t=85>
 
 ## GitHub Repository
 GitHub Repo: <https://github.com/andrewkb1004-del/Drawing-Pygame-Software-andrewkb1004-del>
